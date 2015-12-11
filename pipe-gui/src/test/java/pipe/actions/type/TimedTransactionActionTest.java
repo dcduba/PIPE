@@ -63,7 +63,7 @@ public class TimedTransactionActionTest {
         action.doAction(mockEvent, mockController);
 
         verify(mockNet).addTransition(
-                argThat(new HasMultiple<>(new HasXY(point.getX(), point.getY()), new HasTimed(true))));
+                argThat(new HasMultiple<Transition>(new HasXY(point.getX(), point.getY()), new HasTimed(true))));
     }
 
     @Test
