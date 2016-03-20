@@ -40,9 +40,9 @@ public class PlaceEditorPanel extends javax.swing.JPanel {
     private final JRootPane rootPane;
 
     /**
-     * Capacity label
+     * Infinite capacity checkbox
      */
-    private javax.swing.JLabel capacity0Label = new javax.swing.JLabel();
+    private javax.swing.JCheckBox infiniteCapacity = new javax.swing.JCheckBox();
 
     /**
      * Capacity spinner for changing the place capacity
@@ -110,14 +110,9 @@ public class PlaceEditorPanel extends javax.swing.JPanel {
                 tokenNameConstraints.insets = new java.awt.Insets(3, 3, 3, 3);
                 placeEditorPanel.add(tokenClassName, tokenNameConstraints);
 
-                tokenClassMarking.setValue(placeController.getTokenCount(token.getId()));
+                tokenClassMarking.setModel(new SpinnerNumberModel(placeController.getTokenCount(token.getId()), 0, Integer.MAX_VALUE, 1));
                 tokenClassMarking.setMinimumSize(new java.awt.Dimension(50, 20));
                 tokenClassMarking.setPreferredSize(new java.awt.Dimension(50, 20));
-                tokenClassMarking.addChangeListener(new javax.swing.event.ChangeListener() {
-                    public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                        markingSpinnerStateChanged(evt, inputtedMarkings.size() - 1);
-                    }
-                });
 
                 GridBagConstraints tokenValueConstraints = new java.awt.GridBagConstraints();
                 tokenValueConstraints.gridx = col + 1;
@@ -131,7 +126,7 @@ public class PlaceEditorPanel extends javax.swing.JPanel {
 
         initializeCapacityLabel(placeEditorPanel, row);
         initializeCapacitySpinner(placeEditorPanel, row);
-        initializeCapacity0Label(placeEditorPanel, row);
+        initializeCapacityCheckbox(placeEditorPanel, row);
 
         GridBagConstraints gridBagConstraints;
 
@@ -148,41 +143,32 @@ public class PlaceEditorPanel extends javax.swing.JPanel {
 
     }
 
-    /**
-     * Sets the no capacity restriction label visible if the capacity is
-     * zero
-     *
-     * @param capacity
-     */
-    private void setCapacityVisible(double capacity) {
-        if (capacity == 0) {
-            capacity0Label.setVisible(true);
-        } else {
-            capacity0Label.setVisible(false);
-        }
-
-    }
-
-    /**
-     * initialises the capacity label. If he capacity is set to 0 it reminds users
-     * that a capacity of 0 imposes no restrictions.
-     * @param placeEditorPanel
-     * @param row
-     */
-    private void initializeCapacity0Label(JPanel placeEditorPanel, int row) {
-        capacity0Label.setText("(no capacity restriction)    ");
+    private void initializeCapacityCheckbox(JPanel placeEditorPanel, int row) {
+    	int capacity = placeController.getCapacity();
+    	
+        infiniteCapacity.setText("Infinite capacity");
+        infiniteCapacity.setSelected(capacity == 0);
+        infiniteCapacity.addChangeListener(new ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                capacityCheckBoxChanged(evt);
+            }
+        });
+        
         GridBagConstraints gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = row;
         gridBagConstraints.insets = new Insets(3, 3, 3, 3);
-        placeEditorPanel.add(capacity0Label, gridBagConstraints);
+        placeEditorPanel.add(infiniteCapacity, gridBagConstraints);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = GridBagConstraints.EAST;
         gridBagConstraints.insets = new Insets(5, 8, 5, 8);
         add(placeEditorPanel, gridBagConstraints);
-        setCapacityVisible(placeController.getCapacity());
+    }
+    
+    private void capacityCheckBoxChanged(javax.swing.event.ChangeEvent evt) {
+   		capacitySpinner.setEnabled(!infiniteCapacity.isSelected());
     }
 
     /**
@@ -191,14 +177,12 @@ public class PlaceEditorPanel extends javax.swing.JPanel {
      * @param row
      */
     private void initializeCapacitySpinner(JPanel placeEditorPanel, int row) {
-        capacitySpinner.setModel(new SpinnerNumberModel(placeController.getCapacity(), 0, Integer.MAX_VALUE, 1));
+    	int capacity = placeController.getCapacity();
+    	
+        capacitySpinner.setModel(new SpinnerNumberModel(Math.max(capacity, 1), 1, Integer.MAX_VALUE, 1));
         capacitySpinner.setMinimumSize(new Dimension(50, 20));
         capacitySpinner.setPreferredSize(new Dimension(50, 20));
-        capacitySpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                capacitySpinnerStateChanged(evt);
-            }
-        });
+       	capacitySpinner.setEnabled(capacity > 0);
 
         GridBagConstraints capacityConstraints = new GridBagConstraints();
         capacityConstraints.gridx = 1;
@@ -315,29 +299,6 @@ public class PlaceEditorPanel extends javax.swing.JPanel {
     }
 
     /**
-     * If the marking spinner changes then more tokens are added to the place
-     *
-     * This feature is not currently implemented
-     * @param evt
-     * @param posInList
-     */
-    private void markingSpinnerStateChanged(javax.swing.event.ChangeEvent evt,
-                                            int posInList) {
-/*      Integer capacity = (Integer)capacitySpinner.getValue();
-      int totalMarkings = 0;
-      for(JSpinner inputtedMarking:inputtedMarkings){
-    	  totalMarkings += (Integer)inputtedMarking.getValue();
-      }
-      int markingOfCurrentSpinner = (Integer)inputtedMarkings.get(posInList).getValue();
-      if (capacity > 0) {
-         if (totalMarkings > capacity) {
-        	 int overMarkingLimit = totalMarkings - capacity;
-        	 inputtedMarkings.get(posInList).setValue(markingOfCurrentSpinner - overMarkingLimit);
-         }
-      }*/
-    }
-
-    /**
      * Performs the ok action
      * @param evt
      */
@@ -354,9 +315,11 @@ public class PlaceEditorPanel extends javax.swing.JPanel {
 
         Map<String, Integer> newTokenValues = getNewTokenValues();
         if (canSetCapacity() && canSetNameValue()) {
-
             placeController.startMultipleEdits();
-            int newCapacity = (Integer) capacitySpinner.getValue();
+            int newCapacity = getCapacitySpinnerValue();
+            if(infiniteCapacity.isSelected()) {
+            	newCapacity = 0;
+            }
             placeController.setCapacity(newCapacity);
             String newName = nameTextField.getText();
             placeController.setId(newName);
@@ -366,20 +329,14 @@ public class PlaceEditorPanel extends javax.swing.JPanel {
         }
     }
 
-    /**
-     *
-     * @return true
-     */
-    private boolean canSetCapacity() {
-        return true;
-    }
+
 
     /**
      *
      * @return the capacity spinner value
      */
-    private Double getCapacitySpinnerValue() {
-        return (Double) capacitySpinner.getValue();
+    private Integer getCapacitySpinnerValue() {
+        return (Integer) capacitySpinner.getValue();
     }
 
     /**
@@ -391,42 +348,60 @@ public class PlaceEditorPanel extends javax.swing.JPanel {
             return true;
         }
         if (!netController.isUniqueName(newName)) {
-            JOptionPane.showMessageDialog(null, "There is already a component named " + newName, "Error",
+            JOptionPane.showMessageDialog(null, "There is already a component named " + newName, "Duplicate name",
                     JOptionPane.WARNING_MESSAGE);
             return false;
         }
         return true;
     }
+    
+    /**
+     * @return false if number of tokens exceeds capacity, or any token count is invalid
+     */
+    private boolean canSetCapacity() {
+    	int capacity = getCapacitySpinnerValue();
+    	int numberOfTokens = calculateTokenCount();
+   	
+    	if(infiniteCapacity.isSelected()) {
+    		//Everything is possible when a place has infinite capacity
+    		return true;
+    	} else if(numberOfTokens > capacity) {
+    		JOptionPane.showMessageDialog(null, "The sum of tokens must not exceed the capacity of this place. There are currently " + numberOfTokens + " tokens in this place.", "Too many tokens",
+    				JOptionPane.WARNING_MESSAGE);
+    		return false;
+    	}
+    	
+        for (int tokenIndex = 0; tokenIndex < inputtedMarkings.size(); tokenIndex++) {
+            String tokenName = inputtedTokenClassNames.get(tokenIndex);
+            int newTokenCount = (Integer) inputtedMarkings.get(tokenIndex).getValue();
 
+            if(newTokenCount < 0) {
+        		JOptionPane.showMessageDialog(null, "The number of tokens for type \"" + tokenName + "\" must be greater or equal to 0.", "Invalid number of tokens",
+        				JOptionPane.WARNING_MESSAGE);
+        		return false;
+            }
+        }
+        
+        //No errors found
+        return true;
+    }
+    
     /**
      * Sets the token values on the place
      *
      * @return new token counts, empty if could not change
      */
-    private  Map<String, Integer> getNewTokenValues() {
+    private Map<String, Integer> getNewTokenValues() {
         Map<String, Integer> newTokenCounts = new HashMap<>();
-        int totalCount = calculateTokenCount();
-        if (placeController.hasCapacityRestriction() && totalCount > getCapacitySpinnerValue()) {
-            JOptionPane.showMessageDialog(null,
-                    "Token counts exceed the capacity of place. Please alter capacity or tokens");
-            return newTokenCounts;
-        }
 
         for (int tokenIndex = 0; tokenIndex < inputtedMarkings.size(); tokenIndex++) {
             String tokenName = inputtedTokenClassNames.get(tokenIndex);
             int newTokenCount = (Integer) inputtedMarkings.get(tokenIndex).getValue();
 
             try {
-                if (newTokenCount < 0) {
-                    JOptionPane.showMessageDialog(null, "Marking cannot be less than 0. Please re-enter");
-                    newTokenCounts.clear();
-                    return newTokenCounts;
-                }
-
                 if (placeController.getTokenCount(tokenName) != newTokenCount) {
                     newTokenCounts.put(tokenName, newTokenCount);
                 }
-
             } catch (NumberFormatException ignored) {
                 JOptionPane.showMessageDialog(null, "Please enter a positive integer greater or equal to 0.",
                         "Invalid entry", JOptionPane.ERROR_MESSAGE);
@@ -434,8 +409,8 @@ public class PlaceEditorPanel extends javax.swing.JPanel {
                 return newTokenCounts;
             } catch (HeadlessException e) {
                 LOGGER.log(Level.SEVERE, e.getMessage());
-                JOptionPane.showMessageDialog(null, "Please enter a positive integer greater or equal to 0.",
-                        "Invalid entry", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Fatal error while trying to process tokens.",
+                        "Fatal error", JOptionPane.ERROR_MESSAGE);
                 newTokenCounts.clear();
                 return newTokenCounts;
             }
@@ -478,14 +453,4 @@ public class PlaceEditorPanel extends javax.swing.JPanel {
     private void cancelButtonHandler(java.awt.event.ActionEvent evt) {
         exit();
     }
-
-    /**
-     * Listens for changes in the capacity spinner
-     * @param evt
-     */
-    private void capacitySpinnerStateChanged(javax.swing.event.ChangeEvent evt) {
-        Double capacity = (Double) capacitySpinner.getValue();
-        setCapacityVisible(capacity);
-    }
-
 }
