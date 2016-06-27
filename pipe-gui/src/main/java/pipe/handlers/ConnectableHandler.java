@@ -15,7 +15,6 @@ import java.awt.event.MouseEvent;
 public class ConnectableHandler<T extends Connectable>
         extends PetriNetObjectHandler<T> {
 
-
     /**
      * Constructor
      * @param contentpane
@@ -46,7 +45,7 @@ public class ConnectableHandler<T extends Connectable>
             selectedAction.doConnectableAction(component, petriNetController);
         }
     }
-
+    
     /**
      * getPopup adds menu items which connectables all share
      * @param e event

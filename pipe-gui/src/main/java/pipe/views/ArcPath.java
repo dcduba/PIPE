@@ -335,7 +335,10 @@ public class ArcPath implements Shape, Cloneable {
         PropertyChangeListener listener = new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent propertyChangeEvent) {
-
+            	if(pathPoints.size() < 2) {
+            		//TODO Better handle event handlers for arcs that no longer exist...
+            		return;
+            	}
                 createPath();
                 arcView.updateBounds();
                 arcView.repaint();

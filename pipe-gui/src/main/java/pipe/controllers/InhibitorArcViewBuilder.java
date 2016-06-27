@@ -35,8 +35,8 @@ public class InhibitorArcViewBuilder {
     }
 
     /**
-     * @param parent, the parent of this arc view
-     * @return an inhibitor arc view
+     * @param parent  the parent of this arc view
+     * @return        an inhibitor arc view
      */
     public InhibitorArcView build(Container parent, PipeApplicationModel model) {
         ArcHandler<? extends Connectable, ? extends Connectable> handler = new ArcHandler<>(parent, arc, controller, model);

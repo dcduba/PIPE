@@ -3,6 +3,7 @@ package pipe.views;
 import pipe.actions.gui.PipeApplicationModel;
 import pipe.constants.GUIConstants;
 import pipe.controllers.PetriNetController;
+import pipe.handlers.ArcLabelHandler;
 import uk.ac.imperial.pipe.exceptions.PetriNetComponentNotFoundException;
 import uk.ac.imperial.pipe.models.petrinet.Arc;
 import uk.ac.imperial.pipe.models.petrinet.ArcPoint;
@@ -82,6 +83,7 @@ public class NormalArcView<S extends Connectable, T extends Connectable> extends
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 String name = evt.getPropertyName();
+                
                 if (name.equals(Connectable.X_CHANGE_MESSAGE) || name.equals(Connectable.Y_CHANGE_MESSAGE)) {
                     updateWeights();
                 }
@@ -132,7 +134,11 @@ public class NormalArcView<S extends Connectable, T extends Connectable> extends
      * @param label
      */
     private void removeLabelFromParentContainer(TextLabel label) {
-        getParent().remove(label);
+    	Container parent = getParent();
+    	
+    	if(parent != null) {
+    		parent.remove(label);
+    	}
     }
 
     /**
@@ -149,11 +155,14 @@ public class NormalArcView<S extends Connectable, T extends Connectable> extends
      * Creates and paints the weights in the center of the arc
      */
     private void updateWeights() {
-        removeCurrentWeights();
-        createWeightLabels();
-        setWeightLabelPosition();
+    	//TODO Actually remove the listener instead of ignoring the inevitable error
+    	if(getParent() != null) {
+    		removeCurrentWeights();
+    		createWeightLabels();
+    		setWeightLabelPosition();
 
-        addWeightLabelsToContainer(getParent());
+    		addWeightLabelsToContainer(getParent());
+    	}
     }
 
     /**
@@ -216,6 +225,10 @@ public class NormalArcView<S extends Connectable, T extends Connectable> extends
     private void addWeightLabelsToContainer(Container container) {
         for (TextLabel label : weightLabel) {
             container.add(label);
+            ArcLabelHandler labelHandler = new ArcLabelHandler(label, container);
+            label.addMouseListener(labelHandler);
+            label.addMouseMotionListener(labelHandler);
+            label.addMouseWheelListener(labelHandler);
         }
     }
 

@@ -16,6 +16,7 @@ import uk.ac.imperial.pipe.visitor.component.PetriNetComponentVisitor;
 import javax.swing.event.UndoableEditListener;
 import javax.swing.undo.UndoManager;
 import javax.swing.undo.UndoableEdit;
+
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -134,6 +135,10 @@ public class PetriNetController implements Serializable {
         placeNamer = new PlaceNamer(model);
         transitionNamer = new TransitionNamer(model);
     }
+    
+    public UndoableEditListener getUndoableEditListener() {
+    	return this.undoListener;
+    }
 
     /**
      * @return Tab this controller is associated with
@@ -207,18 +212,30 @@ public class PetriNetController implements Serializable {
             selectPlaceable(transition, selectionRectangle);
         }
         for (Arc<? extends Connectable, ? extends Connectable> arc : petriNet.getArcs()) {
-            if (isArcSelected(arc, selectionRectangle)) {
+            if (isArcSelected(arc, selectionRectangle) || selectedComponents.contains(arc.getSource()) || selectedComponents.contains(arc.getTarget())) {
                 select(arc);
                 for (ArcPoint arcPoint : arc.getArcPoints()) {
                     select(arcPoint);
                 }
-            } else if (selectedComponents.contains(arc.getSource()) || selectedComponents.contains(arc.getTarget())) {
-                select(arc);
             }
         }
         for (Annotation annotation : petriNet.getAnnotations()) {
             selectPlaceable(annotation, selectionRectangle);
         }
+    }
+    
+    /**
+     * Selects arcs connected to current selection
+     */
+    public void selectConnectedArcs() {
+    	for (Arc<? extends Connectable, ? extends Connectable> arc : petriNet.getArcs()) {
+    		if (selectedComponents.contains(arc.getSource()) || selectedComponents.contains(arc.getTarget())) {
+    			select(arc);
+                for (ArcPoint arcPoint : arc.getArcPoints()) {
+                    select(arcPoint);
+                }
+    		}
+    	}
     }
 
     /**
@@ -262,7 +279,9 @@ public class PetriNetController implements Serializable {
      * @param component
      */
     public void select(PetriNetComponent component) {
-        selectedComponents.add(component);
+    	if(!isSelected(component)) {
+    		selectedComponents.add(component);
+    	}
     }
 
     /**
@@ -286,7 +305,26 @@ public class PetriNetController implements Serializable {
      */
     public List<UndoableEdit> deleteSelection() throws PetriNetComponentException {
         List<UndoableEdit> edits = new LinkedList<>();
-        for (PetriNetComponent component : selectedComponents) {
+        List<PetriNetComponent> components = new ArrayList<>(selectedComponents);
+    	Comparator<PetriNetComponent> comparator = new Comparator<PetriNetComponent>() {
+    		@Override
+		    public int compare(PetriNetComponent component1, PetriNetComponent component2) {
+		        if(component1.getClass() == component2.getClass()) {
+		        	return 0;
+		        } else if(component1 instanceof Arc) {
+		        	return -1;
+		        } else if(component2 instanceof Arc) {
+		        	return 1;
+		        } else {
+		        	return 0;
+		        }
+		    }
+		};
+		
+		//We want to delete arcs before anything else, so the PetriNet is in a consistent
+		//state at all times
+		Collections.sort(components, comparator);
+        for (PetriNetComponent component : components) {
             edits.add(deleteComponent(component));
         }
         selectedComponents.clear();
@@ -421,8 +459,8 @@ public class PetriNetController implements Serializable {
 
     /**
      * @param name token name to find
-     * @return Token from PetriNet
-     * @throw RuntimeException if the token does not exist
+     * @return     Token from PetriNet
+     * @throws PetriNetComponentNotFoundException if the token does not exist
      */
     public Token getToken(String name) throws PetriNetComponentNotFoundException {
         return petriNet.getComponent(name, Token.class);

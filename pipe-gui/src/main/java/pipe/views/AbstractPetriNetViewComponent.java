@@ -30,11 +30,6 @@ public abstract class AbstractPetriNetViewComponent<T extends PetriNetComponent>
     protected final PetriNetController petriNetController;
 
     /**
-     * Petri net component id
-     */
-    protected String id;
-
-    /**
      * Parent that this component is contained in.
      */
     protected final Container parent;
@@ -82,7 +77,6 @@ public abstract class AbstractPetriNetViewComponent<T extends PetriNetComponent>
      * @param parent Parent of the view
      */
     public AbstractPetriNetViewComponent(String id, T model, PetriNetController controller, Container parent) {
-        this.id = id;
         this.parent = parent;
         selectable = true;
         copyPasteable = true;
@@ -125,7 +119,7 @@ public abstract class AbstractPetriNetViewComponent<T extends PetriNetComponent>
      * @return model id
      */
     public final String getId() {
-        return id;
+        return getModel().getId();
     }
 
     /**

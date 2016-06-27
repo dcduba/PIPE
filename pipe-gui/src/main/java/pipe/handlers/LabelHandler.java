@@ -63,4 +63,16 @@ public class LabelHandler<T extends Connectable> extends javax.swing.event.Mouse
         controller.moveNameLabel(point);
     }
 
+    /**
+     * Passes the event to the parent object with relative coordinates
+     * @param e
+     */
+    @Override
+    public void mouseMoved(MouseEvent e) {
+        Point point = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), connectable.getParent());
+    	MouseEvent newEvent = new MouseEvent(e.getComponent(), e.getID(), e.getWhen(), e.getModifiers(),
+                (int) point.getX(), (int) point.getY(), e.getClickCount(), e.isPopupTrigger(), e.getButton());
+        connectable.getParent().dispatchEvent(newEvent);
+        e.consume();
+    }
 }

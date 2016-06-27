@@ -15,6 +15,7 @@ import java.awt.*;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
+import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -27,7 +28,7 @@ import java.util.logging.Logger;
 
 /**
  * The main canvas that the {@link pipe.views.PetriNetViewComponent}s appear on
- * It is a tab in the main applicaiton
+ * It is a tab in the main application
  */
 public class PetriNetTab extends JLayeredPane implements Observer, Printable {
 
@@ -51,7 +52,7 @@ public class PetriNetTab extends JLayeredPane implements Observer, Printable {
      */
     @Deprecated
     public File appFile;
-
+    
     /**
      * Constructor
      *
@@ -109,13 +110,15 @@ public class PetriNetTab extends JLayeredPane implements Observer, Printable {
      * Add the Petri net component to this canvas
      * @param component
      */
-    public void add(AbstractPetriNetViewComponent<?> component) {
+    private void add(AbstractPetriNetViewComponent<?> component) {
         registerLocationChangeListener(component.getModel());
 
         setLayer(component, DEFAULT_LAYER);
         super.add(component);
         petriNetComponents.put(component.getId(), component);
         updatePreferredSize();
+        
+        component.getModel().addPropertyChangeListener(new NameChangeListener(component, this.petriNetComponents));
         //        repaint();
     }
 
@@ -145,6 +148,37 @@ public class PetriNetTab extends JLayeredPane implements Observer, Printable {
             parent.validate();
         }
     }
+    
+    private Rectangle getBoundingRectangle() {
+    	Rectangle r = null;
+    	int right = 0;
+    	int bottom = 0;
+    	for (Component component : getComponents()) {
+    		if(r == null) {
+    			r = component.getBounds();
+    			right = r.x + r.width;
+    			bottom = r.y + r.height;
+    		} else {
+    			Rectangle cr = component.getBounds();
+    			if(cr.x + cr.width > right) {
+    				right = cr.x + cr.width;
+    			}
+    			if(cr.y + cr.height > bottom) {
+    				bottom = cr.y + cr.height;
+    			}
+    			if(cr.x < r.x) {
+    				r.x = cr.x;
+    			}
+    			if(cr.y < r.y) {
+    				r.y = cr.y;
+    			}
+    		}
+    	}
+    	r.width = right - r.x;
+    	r.height = bottom - r.y;
+    	
+    	return r;
+    }
 
     /**
      *
@@ -164,10 +198,10 @@ public class PetriNetTab extends JLayeredPane implements Observer, Printable {
 
     /**
      * Prints the Petri net tab
-     * @param g
-     * @param pageFormat
-     * @param pageIndex
-     * @return
+     * @param g          graphics object
+     * @param pageFormat page format
+     * @param pageIndex  page index
+     * @return           constant signifying if page exists
      * @throws PrinterException
      */
     @Override
@@ -180,6 +214,19 @@ public class PetriNetTab extends JLayeredPane implements Observer, Printable {
         g2D.scale(0.5, 0.5);
         print(g2D);
         return Printable.PAGE_EXISTS;
+    }
+    
+    /* Export as image 
+     * http://stackoverflow.com/a/14992446/2209007 
+     */
+    public BufferedImage exportAsImage() {
+    	Rectangle boundingRectangle = getBoundingRectangle();
+    	BufferedImage bImg = new BufferedImage((int) boundingRectangle.getWidth(), (int) boundingRectangle.getHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D cg = bImg.createGraphics();
+        cg.translate(-boundingRectangle.x, -boundingRectangle.y);
+        this.paintAll(cg);
+        
+        return bImg;
     }
 
     /**
@@ -211,16 +258,6 @@ public class PetriNetTab extends JLayeredPane implements Observer, Printable {
         } else if (type.equals("move")) {
             setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
         }
-    }
-
-    /**
-     * Set meta down. Since there is no documentation for this the functionality
-     * has been depricated and it no longer does anything
-     * @param down
-     */
-    @Deprecated
-    public void setMetaDown(boolean down) {
-        //TODO: DELETE
     }
 
     /**
@@ -322,6 +359,49 @@ public class PetriNetTab extends JLayeredPane implements Observer, Printable {
         @Override
         public void visit(Transition transition) {
             transition.addPropertyChangeListener(updateListener);
+        }
+    }
+    
+    /**
+     * Very similar to uk.ac.imperial.pipe.models.petrinet.PetriNet.NameChangeListener
+     * Listener for changing a components name in the set it is referenced by
+     * @param <T>
+     */
+    private static class NameChangeListener implements PropertyChangeListener {
+        /**
+         * Comoponent whose name will change
+         */
+        private final AbstractPetriNetViewComponent viewComponent;
+
+        /**
+         * Component map that houses the component, needs to be updated on name change
+         */
+        private final Map<String, PetriNetViewComponent> viewComponentMap;
+
+        /**
+         * Constructor
+         * @param viewComponent
+         * @param viewComponentMap
+         */
+        public NameChangeListener(AbstractPetriNetViewComponent viewComponent, Map<String, PetriNetViewComponent> viewComponentMap) {
+            this.viewComponent = viewComponent;
+            this.viewComponentMap = viewComponentMap;
+        }
+
+        /**
+         * If the name/id of the component changes then it is updated in the component map.
+         * That is the old key is removed and the compoennt is readded with the new name.
+         * @param evt
+         */
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            if (evt.getPropertyName().equals(PetriNetComponent.ID_CHANGE_MESSAGE)) {
+                String oldId = (String) evt.getOldValue();
+                String newId = (String) evt.getNewValue();
+                viewComponentMap.remove(oldId);
+                viewComponentMap.put(newId, viewComponent);
+            }
+
         }
     }
 }

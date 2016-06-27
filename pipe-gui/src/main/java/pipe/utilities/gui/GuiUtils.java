@@ -21,6 +21,6 @@ public final class GuiUtils {
      */
     public static void displayErrorMessage(Component parent, String message) {
 
-        JOptionPane.showMessageDialog(parent, message, "Error", JOptionPane.YES_NO_OPTION);
+        JOptionPane.showMessageDialog(parent, message, "Error", JOptionPane.OK_OPTION);
     }
 }
