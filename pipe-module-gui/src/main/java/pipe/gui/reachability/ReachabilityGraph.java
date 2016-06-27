@@ -381,40 +381,6 @@ public class ReachabilityGraph {
             }
         }
         
-        /*for (Map.Entry<Integer, Node> entry : nodes.entrySet()) {
-        	for (Map.Entry<Integer, Node> entry2 : nodes.entrySet()) {
-        		if(entry == entry2 || inSet(entry.getValue(), entry2.getValue(), connections))
-        			continue;
-        		
-        		Node startNode = entry.getValue();
-        		Node endNode = entry2.getValue();
-        		
-				edges.add(new SpacerEdge(startNode, endNode));
-        		addToSet(startNode, endNode, connections);
-        	}
-        }*/
-        
-        /*Map<Node,Set<Node>> doubleConnections = new HashMap<>();
-        Node start;
-        for( Map.Entry<Node, Set<Node>> entry : connections.entrySet() ) {
-        	start = entry.getKey();
-        	
-        	for( Node firstStep : entry.getValue() ) {
-        		Set<Node> secondSet = connections.get(firstStep);
-        		if(secondSet == null)
-        			continue;
-
-        		for( Node end : secondSet ) {
-        			if( start != end && !inSet(start, end, doubleConnections) && !inSet(start, end, connections)) {
-        				edges.add(new SpacerEdge(start, end));
-        				
-        				addToSet(start, end, doubleConnections);
-        				addToSet(end, start, doubleConnections);
-        			}
-        		}
-        	}
-        }*/
-        
         return edges;
     }
     
