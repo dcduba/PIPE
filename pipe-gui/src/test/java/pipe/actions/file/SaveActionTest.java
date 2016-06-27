@@ -45,19 +45,24 @@ public class SaveActionTest {
 
     @Before
     public void setUp() {
-        saveAction = new SaveAction(mockController, mockFileChooser);
+        saveAction = new SaveAction(mockController, mockView);
         when(mockController.getActivePetriNetController()).thenReturn(mockPetriNetController);
         when(mockPetriNetController.getPetriNet()).thenReturn(mockPetriNet);
     }
 
     @Test
+    @SuppressWarnings({"deprecation"})
     public void performsSaveAsWhenPetriNetHasNoFile()
             throws InvocationTargetException, ParserConfigurationException, NoSuchMethodException,
             IllegalAccessException, TransformerException {
         PetriNetName normalName = new NormalPetriNetName("");
         when(mockPetriNet.getName()).thenReturn(normalName);
         File file = new File("test.xml");
+        
+        //This is expected to show "deprecated". Reason: Should not be used outside tests.
+        saveAction.setFileDialog(mockFileChooser);
         when(mockFileChooser.getFiles()).thenReturn(new File[]{file});
+        
         saveAction.actionPerformed(null);
         verify(mockController).saveAsCurrentPetriNet(file);
     }

@@ -1,6 +1,8 @@
 package pipe.actions.gui;
 
 import pipe.controllers.application.PipeApplicationController;
+import pipe.views.PipeApplicationView;
+
 import uk.ac.imperial.pipe.models.petrinet.PetriNet;
 import uk.ac.imperial.pipe.models.petrinet.name.FileNameVisitor;
 import uk.ac.imperial.pipe.models.petrinet.name.NormalNameVisitor;
@@ -25,8 +27,8 @@ public class SaveAction extends AbstractSaveAction {
      * @param pipeApplicationController PIPE main appliaction controller
      * @param fileChooser save file dialog chooser
      */
-    public SaveAction(PipeApplicationController pipeApplicationController, FileDialog fileChooser) {
-        super("Save", "Save", KeyEvent.VK_S, InputEvent.META_DOWN_MASK, pipeApplicationController, fileChooser);
+    public SaveAction(PipeApplicationController pipeApplicationController, PipeApplicationView view) {
+        super("Save", "Save", KeyEvent.VK_S, InputEvent.META_DOWN_MASK, pipeApplicationController, view);
     }
 
     /**
@@ -37,7 +39,7 @@ public class SaveAction extends AbstractSaveAction {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (doSaveAs()) {
-            saveAsOperation();
+            saveAsNet();
         } else {
             PetriNet petriNet = pipeApplicationController.getActivePetriNetController().getPetriNet();
             FileNamer fileNamer = new FileNamer();
