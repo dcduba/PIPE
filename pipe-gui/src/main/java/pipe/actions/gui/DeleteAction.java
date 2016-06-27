@@ -5,9 +5,14 @@ import pipe.controllers.application.PipeApplicationController;
 import pipe.historyActions.MultipleEdit;
 import pipe.utilities.gui.GuiUtils;
 import uk.ac.imperial.pipe.exceptions.PetriNetComponentException;
+import uk.ac.imperial.pipe.models.petrinet.PetriNetComponent;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.util.List;
+import java.util.Set;
+
+import javax.swing.undo.UndoableEdit;
 
 public class DeleteAction extends GuiAction {
 
