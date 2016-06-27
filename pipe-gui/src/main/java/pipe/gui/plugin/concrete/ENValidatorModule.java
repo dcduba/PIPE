@@ -1,13 +1,13 @@
 package pipe.gui.plugin.concrete;
 
 import pipe.gui.validation.ENValidator;
-import pipe.gui.plugin.GuiModule;
+import pipe.gui.plugin.GuiAnalysisModule;
 import uk.ac.imperial.pipe.models.petrinet.PetriNet;
 
 import javax.swing.*;
 import java.awt.FileDialog;
 
-public class ENValidatorModule implements GuiModule {
+public class ENValidatorModule implements GuiAnalysisModule {
     /**
      * Starts the GSPN analysis module
      * @param petriNet current Petri net to use

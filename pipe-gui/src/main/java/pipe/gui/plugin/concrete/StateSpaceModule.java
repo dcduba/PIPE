@@ -1,7 +1,7 @@
 package pipe.gui.plugin.concrete;
 
 import pipe.gui.reachability.ReachabilityGraph;
-import pipe.gui.plugin.GuiModule;
+import pipe.gui.plugin.GuiAnalysisModule;
 import uk.ac.imperial.pipe.models.petrinet.PetriNet;
 
 import javax.swing.*;
@@ -10,7 +10,7 @@ import java.awt.FileDialog;
 /**
  * State Space module that is dynamically loaded into the GUI
  */
-public class StateSpaceModule implements GuiModule {
+public class StateSpaceModule implements GuiAnalysisModule {
     @Override
     public void start(PetriNet petriNet) {
         JFrame frame = new JFrame("State Space Explorer");

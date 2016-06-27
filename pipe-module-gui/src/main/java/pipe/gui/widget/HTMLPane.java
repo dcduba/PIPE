@@ -8,7 +8,7 @@ import java.awt.Insets;
 
 /**
  * A HTML pane to display results of analysis on.
- * <p/>
+ * 
  * Largely taken from PIPE 4
  */
 public class HTMLPane extends JPanel {

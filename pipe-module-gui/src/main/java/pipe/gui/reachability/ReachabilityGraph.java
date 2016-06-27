@@ -20,6 +20,10 @@ import uk.ac.imperial.pipe.exceptions.InvalidRateException;
 import uk.ac.imperial.pipe.models.petrinet.PetriNet;
 import uk.ac.imperial.state.ClassifiedState;
 import uk.ac.imperial.state.Record;
+import uk.ac.imperial.pipe.models.petrinet.Place;
+import uk.ac.imperial.utils.Pair;
+
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.Container;
@@ -29,8 +33,12 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -85,18 +93,51 @@ public class ReachabilityGraph {
     private DefaultGraph graph = new DefaultGraph();
 
     private StateSpaceLoader stateSpaceLoader;
-
-
+    
     /**
-     * When selecting use current Petri net the petri net used will be
+     * Asks user to select a petrinet. "use current Petri net" can be used to use current petrinet
      *
-     * @param loadDialog
+     * @param loadDialog the dialog to be shown
      * @param petriNet   current petri net
      */
-
     public ReachabilityGraph(FileDialog loadDialog, PetriNet petriNet) {
-        stateSpaceLoader = new StateSpaceLoader(petriNet, loadDialog);
+    	stateSpaceLoader = new StateSpaceLoader(petriNet, loadDialog);
         setUp();
+    }
+    
+    /**
+     * Calculates the maximum capacity of all places in this petriNet
+     * 
+     * @return int 0 if infinite, otherwise maximum capacity
+     */
+    private int getMaxCapacity() {
+    	int maxCapacity = 1;
+    	PetriNet petriNet = stateSpaceLoader.getPetriNet();
+    	
+    	for(Place place : petriNet.getPlaces()) {
+    		if(!place.hasCapacityRestriction()) {
+    			//There is nothing larger than infinity
+    			return 0;
+    		} else if(place.getCapacity() > maxCapacity) {
+    			maxCapacity = place.getCapacity();
+    		}
+    	}
+    	return maxCapacity;
+    }
+    
+    /**
+     * 
+     * @return return true if all places have infinite capacity, and false if at least 1 has a limited capacity
+     */
+    private boolean hasOnlyInfiniteCapacity() {
+    	PetriNet petriNet = stateSpaceLoader.getPetriNet();
+    	
+    	for(Place place : petriNet.getPlaces()) {
+    		if(place.hasCapacityRestriction()) {
+    			return false;
+    		}
+    	}
+    	return true;
     }
 
     /**
@@ -165,10 +206,14 @@ public class ReachabilityGraph {
 
         pane.setNodePainter(TangibleStateNode.class, TangibleStateNode.getShapeNodePainter());
         pane.setNodePainter(VanishingStateNode.class, VanishingStateNode.getShapeNodePainter());
+        pane.setNodePainter(TangibleStartStateNode.class, TangibleStartStateNode.getShapeNodePainter());
+        pane.setNodePainter(VanishingStartStateNode.class, VanishingStartStateNode.getShapeNodePainter());
 
 
         pane.setEdgePainter(DirectedTextEdge.class,
                 new PIPELineWithTextEdgePainter(JPowerGraphColor.BLACK, JPowerGraphColor.GRAY, false));
+        pane.setEdgePainter(SpacerEdge.class,
+        		new PIPESpacerEdgePainter(JPowerGraphColor.BLACK, JPowerGraphColor.GRAY, false));
 
         pane.setAntialias(true);
 
@@ -181,12 +226,20 @@ public class ReachabilityGraph {
     /**
      * Calculates the steady state exploration of a Petri net and stores its results
      * in a temporary file.
-     * <p/>
+     * 
      * These results are then read in and turned into a graphical representation using mxGraph
      * which is displayed to the user
      * @param threads number of threads to use to explore the state space
      */
     private void calculateResults(int threads) {
+    	if(coverabilityButton.isSelected() && !hasOnlyInfiniteCapacity()) {
+    		JOptionPane.showMessageDialog(getMainPanel(),
+    			    "The coverability graph algorithm only works for Petri nets where every place has infinite capacity. Please complement all places that have a capacity and set their capacity to infinite, then try again.",
+    			    "All places must have infinite capacity",
+    			    JOptionPane.ERROR_MESSAGE);
+    		return;
+    	}
+    	
         try {
             StateSpaceExplorer.StateSpaceExplorerResults results =
                     stateSpaceLoader.calculateResults(new StateSpaceLoader.ExplorerCreator() {
@@ -209,6 +262,7 @@ public class ReachabilityGraph {
 
         } catch (InvalidRateException | TimelessTrapException | IOException | InterruptedException | ExecutionException e) {
             LOGGER.log(Level.SEVERE, e.toString());
+            JOptionPane.showMessageDialog(panel1, e.toString(), "State space explorer error", JOptionPane.ERROR_MESSAGE);
         } catch (StateSpaceLoaderException e) {
             JOptionPane.showMessageDialog(panel1, e.getMessage(), "GSPN Analysis Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -225,7 +279,7 @@ public class ReachabilityGraph {
      * Creates the explorer utilities based upon whether the coverability or reachability graph
      * is being generate
      *
-     * @param petriNet
+     * @param petriNet  petrinet
      * @return explorer utilities for generating state space
      */
     private ExplorerUtilities getExplorerUtilities(PetriNet petriNet) {
@@ -241,7 +295,7 @@ public class ReachabilityGraph {
      * Vanishing explorer is either a {@link pipe.reachability.algorithm.SimpleVanishingExplorer} if
      * vanishing states are to be included in the graph, else it is {@link pipe.reachability.algorithm.OnTheFlyVanishingExplorer}
      *
-     * @param explorerUtilities
+     * @param explorerUtilities  previously generated explorer utilities
      */
     private VanishingExplorer getVanishingExplorer(ExplorerUtilities explorerUtilities) {
         if (includeVanishingStatesCheckBox.isSelected()) {
@@ -266,7 +320,7 @@ public class ReachabilityGraph {
      * Updates the mxGraph to display the records
      *
      * @param records  state transitions from a processed Petri net
-     * @param stateMap
+     * @param stateMap state map
      */
     private void updateGraph(Iterable<Record> records, Map<Integer, ClassifiedState> stateMap) {
         graph.clear();
@@ -277,15 +331,22 @@ public class ReachabilityGraph {
     }
 
     /**
-     * @param stateMap
+     * @param stateMap state map
      * @return All nodes to be added to the graph
      */
     private Map<Integer, Node> getNodes(Map<Integer, ClassifiedState> stateMap) {
+    	int maxCapacity = getMaxCapacity();
+    	
         Map<Integer, Node> nodes = new HashMap<>(stateMap.size());
         for (Map.Entry<Integer, ClassifiedState> entry : stateMap.entrySet()) {
             ClassifiedState state = entry.getValue();
             int id = entry.getKey();
-            nodes.put(id, createNode(state, id));
+            
+            if(maxCapacity == 1) {
+            	nodes.put(id, createSimpleNode(state, id));
+            } else {
+            	nodes.put(id, createRegularNode(state, id));
+            }
         }
         return nodes;
     }
@@ -293,23 +354,86 @@ public class ReachabilityGraph {
     /**
      * All edges to be added to the graph
      *
-     * @param records
-     * @param nodes
-     * @return
+     * @param records  records of states, and all states that can be reached from each state
+     * @param nodes    map of ids to the corresponding state nodes
+     * @return         all directional edges between state nodes A and B, where B can be reached from A
      */
     private Collection<Edge> getEdges(Iterable<Record> records, Map<Integer, Node> nodes) {
         Collection<Edge> edges = new ArrayList<>();
+        Map<Node,Set<Node>> connections = new HashMap<>();
+        
         for (Record record : records) {
             int state = record.state;
-            for (Map.Entry<Integer, Double> entry : record.successors.entrySet()) {
+            for (Map.Entry<Integer, Pair<Double, Collection<String>>> entry : record.successors.entrySet()) {
                 int succ = entry.getKey();
-                edges.add(new DirectedTextEdge(nodes.get(state), nodes.get(succ),
-                        String.format("%.2f", entry.getValue())));
+                ArrayList<String> transitionNames = (ArrayList<String>) entry.getValue().getRight();
+                Collections.sort(transitionNames);
+                double rate = entry.getValue().getLeft();
+                
+                Node startNode = nodes.get(state);
+                Node endNode = nodes.get(succ);
+                edges.add(new DirectedTextEdge(startNode, endNode,
+                        String.format("%s (%.2f)", StringUtils.join(transitionNames, ", "), rate)));
+                
+                //Keep track of all single connections
+                addToSet(startNode, endNode, connections);
+                addToSet(endNode, startNode, connections);
             }
         }
+        
+        /*for (Map.Entry<Integer, Node> entry : nodes.entrySet()) {
+        	for (Map.Entry<Integer, Node> entry2 : nodes.entrySet()) {
+        		if(entry == entry2 || inSet(entry.getValue(), entry2.getValue(), connections))
+        			continue;
+        		
+        		Node startNode = entry.getValue();
+        		Node endNode = entry2.getValue();
+        		
+				edges.add(new SpacerEdge(startNode, endNode));
+        		addToSet(startNode, endNode, connections);
+        	}
+        }*/
+        
+        /*Map<Node,Set<Node>> doubleConnections = new HashMap<>();
+        Node start;
+        for( Map.Entry<Node, Set<Node>> entry : connections.entrySet() ) {
+        	start = entry.getKey();
+        	
+        	for( Node firstStep : entry.getValue() ) {
+        		Set<Node> secondSet = connections.get(firstStep);
+        		if(secondSet == null)
+        			continue;
+
+        		for( Node end : secondSet ) {
+        			if( start != end && !inSet(start, end, doubleConnections) && !inSet(start, end, connections)) {
+        				edges.add(new SpacerEdge(start, end));
+        				
+        				addToSet(start, end, doubleConnections);
+        				addToSet(end, start, doubleConnections);
+        			}
+        		}
+        	}
+        }*/
+        
         return edges;
     }
+    
+    private void addToSet(Node key, Node val, Map<Node,Set<Node>> collection) {
+        Set<Node> result;
+    	if(!collection.containsKey(key)) {
+        	result = new HashSet<>(1);
+        	result.add(val);
+        	collection.put(key, result);
+        } else {
+        	result = collection.get(key);
+        	result.add(val);
+        }
+    }
 
+    private boolean inSet(Node key, Node val, Map<Node,Set<Node>> collection) {
+    	return collection.containsKey(key) && collection.get(key).contains(val);
+    }
+    
     /**
      * Performs laying out of items on the graph
      */
@@ -319,23 +443,134 @@ public class ReachabilityGraph {
     }
 
     /**
+     * Creates a node that displays which places contain a token. Only to be used if maxCapacity == 1
+     * 
      * @param state classified state to be turned into a graph node
      * @param id    state integer id
-     * @return Tangible or Vanishing state node corresponding to the state and its integer id representation
+     * @return Tangible or Vanishing state node with simple notation
      */
-    private Node createNode(ClassifiedState state, int id) {
-        String label = Integer.toString(id);
-        String toolTip = state.toString();
-        if (state.isTangible()) {
-            return new TangibleStateNode(label, toolTip);
+    private Node createSimpleNode(ClassifiedState state, int id) {
+    	String label = "";
+    	String toolTip = "";
+    	
+    	List<String> places = new ArrayList<String>();
+    	for(String place : state.getPlaces()) {
+    		places.add(place);
+    	}
+    	Map<String, Map<String, Integer>> tokenMap = state.asMap();
+    	Collections.sort(places);
+   		int numberOfTokens = tokenMap.get(places.get(0)).size();
+
+   		if(numberOfTokens > 1) {
+   			//Well, that was a waste of time...
+   			return createRegularNode(state, id);
+   		}
+   		
+   		String token = "";
+   		for(String onlyToken : tokenMap.get(places.get(0)).keySet()) {
+   			token = onlyToken;
+   		}
+   		
+    	List<String> preparedLabel = new ArrayList<String>();
+    	List<String> preparedToolTip = new ArrayList<String>();
+    	
+    	for(String place : places) {
+    		int tokenCount = tokenMap.get(place).get(token); 
+			if( tokenCount == 1 ) {
+				preparedLabel.add(place);
+			}
+			preparedToolTip.add("<b>" + place + ":</b> " + tokenCount);
+    	}
+    	
+    	label = StringUtils.join(preparedLabel, ", ");
+    	toolTip = StringUtils.join(preparedToolTip, "<br>");
+    	return createNode(state, label, toolTip, id);
+    }
+    
+    /**
+     * Creates a node that displays the number of tokens per type, per place for this state in a tuple
+     * 
+     * @param state classified state to be turned into a graph node
+     * @param id    state integer id
+     * @return Tangible or Vanishing state node with tuple notation
+     */
+    private Node createRegularNode(ClassifiedState state, int id) {
+    	String label = "";
+    	String toolTip = "";
+    	
+    	List<String> places = new ArrayList<String>();
+    	for(String place : state.getPlaces()) {
+    		places.add(place);
+    	}
+    	List<String> tokens = new ArrayList<String>();
+    	Map<String, Map<String, Integer>> tokenMap = state.asMap();
+    	Collections.sort(places);
+   		int numberOfTokens = tokenMap.get(places.get(0)).size();
+    	for(String token : tokenMap.get(places.get(0)).keySet()) {
+    		tokens.add(token);
+    	}
+    	Collections.sort(tokens);
+    	List<String> preparedStrings = new ArrayList<String>();
+    	List<String> preparedToolTipStrings = new ArrayList<String>();
+    	
+    	label += "[" + Integer.toString(id) + "] ";
+    	for(String place : places) {
+    		List<String> tokenCountForPlace = new ArrayList<String>();
+    		List<String> toolTipTokenCountForPlace = new ArrayList<String>(); 
+    		String preparedString;
+    		
+    		for(String token : tokens) {
+    			int tokenCount = tokenMap.get(place).get(token);
+    			if(tokenCount == Integer.MAX_VALUE) {
+    				tokenCountForPlace.add("ω");
+    				toolTipTokenCountForPlace.add("ω " + token);
+    			} else {
+    				tokenCountForPlace.add(Integer.toString(tokenCount));
+    				toolTipTokenCountForPlace.add(Integer.toString(tokenCount) + " " + token);
+    			}
+    		}
+    		preparedString = StringUtils.join(tokenCountForPlace, ",");
+    		
+    		if(numberOfTokens > 1) {
+    			preparedStrings.add("(" + preparedString + ")");
+    		} else {
+    			preparedStrings.add(preparedString);
+    		}
+    		
+    		preparedToolTipStrings.add("<b>" + place + ":</b> " + StringUtils.join(toolTipTokenCountForPlace, ", "));
+    	}
+    	label += "(";
+    	label += StringUtils.join(preparedStrings, ",");    	
+    	label += ")";
+    	
+    	toolTip = StringUtils.join(preparedToolTipStrings, "<br>");
+    	
+    	return createNode(state, label, toolTip, id);
+    }
+    
+    /**
+     * @param state classified state to be turned into a graph node
+     * @param String label to be used on the node
+     * @param String tooltip to be used when hovering over node with mouse
+     * @param id    state integer id
+     * @return Tangible or Vanishing state node
+     */
+    private Node createNode(ClassifiedState state, String label, String toolTip, int id) {
+        if (state.isTangible() && id == 0) {
+        	return new TangibleStartStateNode(label, toolTip, id);
+        } else if(state.isTangible()) {
+            return new TangibleStateNode(label, toolTip, id);
+        } else if(id == 0) {
+        	return new VanishingStartStateNode(label, toolTip, id);
+        } else {
+        	return new VanishingStateNode(label, toolTip, id);
         }
-        return new VanishingStateNode(label, toolTip);
     }
 
     /**
      * Constructor deactivates use current petri net radio button since none is supplied.
      *
-     * @param loadDialog
+     * @param loadDialog the dialog to be shown
      */
     public ReachabilityGraph(FileDialog loadDialog) {
         stateSpaceLoader = new StateSpaceLoader(loadDialog);
@@ -345,7 +580,7 @@ public class ReachabilityGraph {
     /**
      * Main method for running this externally without PIPE
      *
-     * @param args
+     * @param args command line arguments
      */
     public static void main(String[] args) {
         JFrame frame = new JFrame("ReachabilityGraph");

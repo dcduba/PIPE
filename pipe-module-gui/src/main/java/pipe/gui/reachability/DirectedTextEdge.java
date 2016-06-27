@@ -5,16 +5,20 @@ import net.sourceforge.jpowergraph.Node;
 
 /**
  * Creates an edge with with text capabilities
- * <p/>
+ * 
  * To be used instead of {@link net.sourceforge.jpowergraph.defaults.DefaultEdge} and {@link net.sourceforge.jpowergraph.defaults.TextEdge}
  * because they consider two edges equal if:
- * from1 = from2 & to1 = to2 OR
- * from1 = to2 & to1 = from2
- * <p/>
+ * from1 = from2 &amp; to1 = to2 OR
+ * from1 = to2   &amp; to1 = from2
+ * 
  * The second behaviour is not correct in directed edges
  */
 public class DirectedTextEdge implements Edge {
-    private final String text;
+    private final int MIN_LENGTH = 250;
+    
+    private final int MAX_LENGTH = 350;
+	
+	private final String text;
 
     /**
      * The node from the edge.
@@ -25,7 +29,7 @@ public class DirectedTextEdge implements Edge {
      * The node to the edge.
      */
     protected Node to;
-
+    
     /**
      * Creates an instance of this class.
      *
@@ -79,13 +83,25 @@ public class DirectedTextEdge implements Edge {
     }
 
     /**
+     * Useful when you want to clamp a value
+     * @return
+     */
+    private double actualLength() {
+    	return Math.sqrt(Math.pow(getTo().getX() - getFrom().getX(), 2) + Math.pow(getTo().getY() - getFrom().getY(), 2));
+    }
+
+    private double clamp(double min, double val, double max) {
+    	return Math.min(Math.max(min, val), max);
+    }
+    
+    /**
      * Returns the length of this edge.
      *
-     * @return the ledge of the edge
+     * @return the preferred length of the edge
      */
     @Override
     public double getLength() {
-        return 40;
+        return clamp(MIN_LENGTH, actualLength(), MAX_LENGTH);
     }
 
     /**

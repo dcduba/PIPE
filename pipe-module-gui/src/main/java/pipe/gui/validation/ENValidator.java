@@ -2,7 +2,6 @@ package pipe.gui.validation;
 
 import org.apache.commons.collections.CollectionUtils;
 
-//import javafx.animation.Transition;
 import uk.ac.imperial.pipe.exceptions.InvalidRateException;
 import uk.ac.imperial.pipe.models.petrinet.*;
 
@@ -40,6 +39,8 @@ public class ENValidator {
     private JCheckBox selfloopCheck;
     
     private JCheckBox arcWeightCheck;
+    
+    private JCheckBox inhibitorArcCheck;
     
     private JLabel informationLabel;
     
@@ -131,6 +132,7 @@ public class ENValidator {
     	boolean isSimpleNet = true;
     	boolean hasSelfloops = false;
     	boolean hasArcWeights = false;
+    	boolean hasInhibitorArcs = false;
     	
         String validationResult = "";
         
@@ -141,11 +143,11 @@ public class ENValidator {
         validationResult += PLACE_INTRO;
     	for(Place place : places) {
     		if(!place.hasCapacityRestriction() || place.getCapacity() > 1) {
-    			validationResult += "- Place " + place.getName() + " has " + (place.hasCapacityRestriction() ? ("a capacity of " + place.getCapacity()) : "an infinite capacity") + " and should have capacity 1.\n";
+    			validationResult += "- Place " + place.getId() + " has " + (place.hasCapacityRestriction() ? ("a capacity of " + place.getCapacity()) : "an infinite capacity") + " and should have capacity 1.\n";
     			hasENCapacity = false;
     		}
     		if(place.getNumberOfTokensStored() > 1) {
-    			validationResult += "- Place " + place.getName() + " has " + place.getNumberOfTokensStored() + " tokens and should have at most 1 token.\n";
+    			validationResult += "- Place " + place.getId() + " has " + place.getNumberOfTokensStored() + " tokens and should have at most 1 token.\n";
     			hasENTokens = false;
     		}
     	}
@@ -156,7 +158,7 @@ public class ENValidator {
     	validationResult += "\n" + TRANS_INTRO;
     	for(Transition transition : transitions) {
     		if(transition.isTimed() || transition.getPriority() != 1 || transition.getRate().getRateType() != RateType.NORMAL_RATE || transition.isInfiniteServer()) {
-    			validationResult += "- Transition " + transition.getName() + " is not a \"simple\" transition.\n";
+    			validationResult += "- Transition " + transition.getId() + " is not a \"simple\" transition.\n";
     			isSimpleNet = false;
     		}
     	}
@@ -171,7 +173,7 @@ public class ENValidator {
     		
     		for(OutboundArc outboundArc : outboundArcs) {
     			if(outboundArc.getSource() == middle && outboundArc.getTarget() == start) {
-    				validationResult += "- Place " + start.getName() + " loops to itself via transition " + middle.getName() + ".\n";
+    				validationResult += "- Place " + start.getId() + " loops to itself via transition " + middle.getId() + ".\n";
     				hasSelfloops = true;
     			}
     		}
@@ -179,12 +181,16 @@ public class ENValidator {
     	for(InboundArc inboundArc : inboundArcs) {
     		Place start = inboundArc.getSource();
     		Transition end = inboundArc.getTarget();
+    		if(inboundArc instanceof InboundInhibitorArc) {
+    			validationResult += "- An inhibitor arc between " + start.getId() + " and " + end.getId() + " exists while none should exist.";
+    			hasInhibitorArcs = true;
+    		}
     		for(Map.Entry<String,String> entry : inboundArc.getTokenWeights().entrySet()) {
     			if(entry.getKey().equals("Default") && !entry.getValue().equals("1")) {
-    				validationResult += "- The arc between " + start.getName() + " and " + end.getName() + " has weight \"" + entry.getValue() + "\" while a weight of \"1\" is expected.\n";
+    				validationResult += "- The arc between " + start.getId() + " and " + end.getId() + " has weight \"" + entry.getValue() + "\" while a weight of \"1\" is expected.\n";
     				hasArcWeights = true;
     			} else if(!entry.getKey().equals("Default") && !entry.getValue().equals("") && !entry.getValue().equals("0")) {
-    				validationResult += "- The arc between " + start.getName() + " and " + end.getName() + " has a weight for tokens of type " + entry.getKey() + " while non is expected.\n";
+    				validationResult += "- The arc between " + start.getId() + " and " + end.getId() + " has a weight for tokens of type " + entry.getKey() + " while none is expected.\n";
     				hasArcWeights = true;
     			}
     		}
@@ -194,15 +200,15 @@ public class ENValidator {
     		Place end = outboundArc.getTarget();
     		for(Map.Entry<String,String> entry : outboundArc.getTokenWeights().entrySet()) {
     			if(entry.getKey().equals("Default") && !entry.getValue().equals("1")) {
-    				validationResult += "- The arc between " + start.getName() + " and " + end.getName() + " has weight \"" + entry.getValue() + "\" while a weight of \"1\" is expected.\n";
+    				validationResult += "- The arc between " + start.getId() + " and " + end.getId() + " has weight \"" + entry.getValue() + "\" while a weight of \"1\" is expected.\n";
     				hasArcWeights = true;
     			} else if(!entry.getKey().equals("Default") && !entry.getValue().equals("") && !entry.getValue().equals("0")) {
-    				validationResult += "- The arc between " + start.getName() + " and " + end.getName() + " has a weight for tokens of type " + entry.getKey() + " while non is expected.\n";
+    				validationResult += "- The arc between " + start.getId() + " and " + end.getId() + " has a weight for tokens of type " + entry.getKey() + " while none is expected.\n";
     				hasArcWeights = true;
     			}
     		}
     	}
-    	if(!hasSelfloops && !hasArcWeights) {
+    	if(!hasSelfloops && !hasArcWeights && !hasInhibitorArcs) {
     		validationResult += "- None\n";
     	}
     	
@@ -212,11 +218,17 @@ public class ENValidator {
     	simplicityCheck.setSelected(isSimpleNet);
     	selfloopCheck.setSelected(!hasSelfloops);
     	arcWeightCheck.setSelected(!hasArcWeights);
+    	inhibitorArcCheck.setSelected(!hasInhibitorArcs);
 
     	//We cannot convert if it contains selfloops, because we do not know how the user wants to solve this
     	if(hasSelfloops) {
     		convertButton.setEnabled(false);
     		convertButton.setToolTipText("Please remove all selfloops before converting to an EN system");
+    		validationResult += "\n\nPlease remove all selfloops before converting to an EN system.";
+    	} else if(hasInhibitorArcs) {
+    		convertButton.setEnabled(false);
+    		convertButton.setToolTipText("Please remove all inhibitor arcs before converting to an EN system");
+    		validationResult += "\n\nPlease remove all inhibitor arcs before converting to an EN system.";
     	} else if(hasENCapacity && hasENTokens && isSimpleNet && !hasSelfloops && !hasArcWeights) {
     		convertButton.setEnabled(false);
     		convertButton.setToolTipText("System is already an EN system");
@@ -227,7 +239,7 @@ public class ENValidator {
     	
     	//Easy confirmation if system is actually EN system via large icon with checkmark/cross
     	validationIcon.setText(null);
-    	if(hasENCapacity && hasENTokens && isSimpleNet && !hasSelfloops && !hasArcWeights) {
+    	if(hasENCapacity && hasENTokens && isSimpleNet && !hasSelfloops && !hasArcWeights && !hasInhibitorArcs) {
     		icon = new ImageIcon(getImageURL("envalid.png"));
     	} else {
     		icon = new ImageIcon(getImageURL("eninvalid.png"));
@@ -248,7 +260,7 @@ public class ENValidator {
      * @param args          command line arguments
      */
     public static void main(String[] args) {
-        //Makes no sense to run alone
+    	//Does not make sense to run this as a stand-alone program
     }
 
     public JPanel getMainPanel() {

@@ -8,7 +8,7 @@ import net.sourceforge.jpowergraph.swtswinginteraction.color.JPowerGraphColor;
  * Node used when displaying the readability graph to represent a tangile node.
  * Tanglible nodes are displayed in a light red color.
  */
-class TangibleStateNode extends DefaultNode {
+class TangibleStateNode extends DefaultNode implements StateNode {
 
     /**
      * Name to display within the node
@@ -18,7 +18,12 @@ class TangibleStateNode extends DefaultNode {
     /**
      * Tooltipof the node
      */
-    private String toolTip;
+    private final String toolTip;
+    
+    /**
+     * id of node
+     */
+    private final int id;
 
     /**
      * Background color
@@ -41,9 +46,10 @@ class TangibleStateNode extends DefaultNode {
      * @param label    the node id.
      * @param tooltip  the state tooltip text
      */
-    TangibleStateNode(String label, String tooltip){
+    TangibleStateNode(String label, String tooltip, int id){
         this.label = label;
         this.toolTip = tooltip;
+        this.id = id;
     }
 
 
@@ -73,6 +79,15 @@ class TangibleStateNode extends DefaultNode {
      */
     public String getToolTip(){
         return toolTip;
+    }
+    
+    /**
+     * 
+     * @return id
+     */
+    @Override
+    public int getId() {
+    	return id;
     }
 
 

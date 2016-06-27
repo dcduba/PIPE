@@ -31,7 +31,7 @@
         </properties>
         <border type="none"/>
         <children>
-          <grid id="62816" layout-manager="GridLayoutManager" row-count="7" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="62816" layout-manager="GridLayoutManager" row-count="8" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
               <splitpane position="left"/>
@@ -102,6 +102,15 @@
                   <text value="Arcs have weight 1"/>
                 </properties>
               </component>
+              <component id="e164c" class="javax.swing.JCheckBox" binding="inhibitorArcCheck">
+                <constraints>
+                  <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <enabled value="false"/>
+                  <text value="Net contains no inhibitor arcs"/>
+                </properties>
+              </component>
             </children>
           </grid>
           <grid id="9b419" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -117,7 +126,8 @@
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="4" hsize-policy="4" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="future icon"/>
+                  <text value="En validation icon"/>
+                  <toolTipText value="Does this Petri net validate as an EN system"/>
                 </properties>
               </component>
             </children>

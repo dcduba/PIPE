@@ -24,11 +24,13 @@ import javax.swing.*;
 public class PIPESwingContextMenuListener 
         extends DefaultSwingContextMenuListener {
    
-   /** Creates a new instance of NewClass
-    * @param theGraph
-    * @param theLensSet
-    * @param theZoomLevels
-    * @param theRotateAngles*/
+   /** 
+    * Creates a new instance
+    * @param theGraph        graph
+    * @param theLensSet      lens set
+    * @param theZoomLevels   zoom levels
+    * @param theRotateAngles rotate angles
+    */
    public PIPESwingContextMenuListener(Graph theGraph, LensSet theLensSet, 
            Integer[] theZoomLevels, Integer[] theRotateAngles) {
       super(theGraph, theLensSet, theZoomLevels, theRotateAngles);
@@ -37,8 +39,8 @@ public class PIPESwingContextMenuListener
 
     /**
      * Noop
-     * @param theNode
-     * @param theMenu
+     * @param theNode   node
+     * @param theMenu   menu
      */
    @Override
    public void fillNodeContextMenu(final Node theNode, JPopupMenu theMenu) {
@@ -48,8 +50,8 @@ public class PIPESwingContextMenuListener
 
     /**
      * Noop
-     * @param theEdge
-     * @param theMenu
+     * @param theEdge   edge
+     * @param theMenu   menu
      */
    @Override
    public void fillEdgeContextMenu(final Edge theEdge, JPopupMenu theMenu) {

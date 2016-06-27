@@ -17,7 +17,8 @@ import java.awt.Color;
  */
 public class PIPESwingToolTipListener 
         extends DefaultSwingToolTipListener {
-   
+	
+  
    @Override
    public boolean addNodeToolTipItems(Node node, JComponent jComponent,
            Color backgroundColor) {
@@ -68,21 +69,24 @@ public class PIPESwingToolTipListener
 //         sFrom = "-";
 //      }
       
-      // the marking of the state
-      String marking = "";
-      if (node instanceof TangibleStateNode) {
-         marking = ((TangibleStateNode)node).getToolTip();
-      }
+      StateNode stateNode = (StateNode) node;
+      String marking = stateNode.getToolTip();
       
       jComponent.setLayout(new BorderLayout());
-      JEditorPane editor = new JEditorPane("text/html", "<font size=3><b>" +
+/*      JEditorPane editor = new JEditorPane("text/html", "<font size=3><b>" +
               node.getLabel().replaceAll("\n", "<br>") +
               "</b> [" + node.getNodeType() + "]" +
               "</font><hr size=1><font size=3><b>Marking: </b>" + marking +
 //              "</font><hr size=1><font size=3><b>Edges From: </b>" + sFrom +
 //              "</font><hr size=1><font size=3><b>Edges To: </b>" + sTo +
               "</font>");
-      editor.setBackground(new Color(255, 255, 204));
+*/
+      JEditorPane editor = new JEditorPane("text/html", "<font size=3><b>" + 
+    		  "[" + stateNode.getNodeType() + " " + stateNode.getId() + "]<br>" +
+    		  "</font><hr size=1><font size=3><b>Marking: </b><br>" + marking +
+    		  "</font>"
+      );
+      editor.setBackground(backgroundColor);
       editor.setEditable(false);
       jComponent.add(editor);
       
