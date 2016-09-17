@@ -56,7 +56,7 @@ public class PipeTest {
         assertNull("separator", menu.getItem(10));
         assertEquals("Examples", menu.getItem(11).getText());
         subMenu = (JMenu) menu.getMenuComponent(11);
-        assertEquals("expecting 15 examples", 15, subMenu.getItemCount());
+        assertEquals("expecting 21 examples", 21, subMenu.getItemCount());
 
         menu = applicationView.getJMenuBar().getMenu(1);
         assertEquals("Edit", menu.getText());
