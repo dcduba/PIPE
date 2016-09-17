@@ -68,7 +68,6 @@ public class PetriNetMouseHandler extends MouseInputAdapter {
      * @param event mouse event
      */
     private void doAction(MouseEvent event) {
-
         CreateAction action = applicationModel.getSelectedAction();
         if (action != null && !applicationModel.isInAnimationMode()) {
             action.doAction(event, petriNetController);

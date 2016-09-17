@@ -9,6 +9,7 @@ import uk.ac.imperial.pipe.models.manager.PetriNetManager;
 import uk.ac.imperial.pipe.models.manager.PetriNetManagerImpl;
 import uk.ac.imperial.pipe.models.petrinet.*;
 import uk.ac.imperial.pipe.parsers.UnparsableException;
+import uk.ac.imperial.pipe.models.petrinet.name.*;
 
 import javax.swing.event.UndoableEditListener;
 import javax.xml.bind.JAXBException;
@@ -18,9 +19,12 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.awt.FileDialog;
+import java.awt.Dialog;
 
 /**
  * Pipes main application controller.
@@ -111,7 +115,7 @@ public class PipeApplicationController {
     public void setActiveTab(PetriNetTab tab) {
         this.activeTab = tab;
     }
-
+    
     /**
      * This is a little hacky, I'm not sure how to make this better when it's so late
      * If a better implementation is clear please re-write
@@ -170,6 +174,10 @@ public class PipeApplicationController {
             throw new UnparsableException("Could not initialise Petri net reader!", e);
         }
     }
+    
+    public void createNewTabFromPetrinet(PetriNet petriNet) {
+    	manager.createFromPetrinet(petriNet);
+    }
 
     /**
      * Save the currently displayed petri net to the specified file
@@ -226,7 +234,85 @@ public class PipeApplicationController {
         }
         return changed;
     }
-
+    
+    /**
+     * Determines which tabs have not yet been saved, and issues a save for each tab that has changes.
+     * A file dialog is shown if the tab has never been saved before, and otherwise it will directly save
+     * to the last file that tab was saved to.
+     * 
+     * @return
+     * @throws ParserConfigurationException
+     * @throws TransformerException
+     * @throws IllegalAccessException
+     * @throws NoSuchMethodException
+     * @throws InvocationTargetException
+     */
+    public boolean saveUnsavedNets()
+    throws ParserConfigurationException, TransformerException, IllegalAccessException, NoSuchMethodException,
+    InvocationTargetException {
+        for (Map.Entry<PetriNetTab, PetriNetController> entry : netControllers.entrySet()) {
+        	if(entry.getValue().hasChanged()) {
+        		//Give visual feedback which net we are saving
+        		setActiveTab(entry.getKey());
+        		
+        		if(!saveCurrentNet())
+        			return false;
+        	}
+        }
+        return true;
+    }
+    
+    public boolean saveCurrentNet()
+    throws ParserConfigurationException, TransformerException, IllegalAccessException, NoSuchMethodException,
+    	    InvocationTargetException {
+    	File file;
+    	
+		file = getFileToSaveTo();
+		if(file == null)
+			return false;
+		
+		saveAsCurrentPetriNet(file);
+		return true;
+    }
+    
+    /**
+     * Gets file reference to which we should save. Might need to be moved to PetriNetController.
+     * @return File reference, or null if action was canceled
+     */
+    private File getFileToSaveTo() {
+        FileDialog fileDialog;
+    	PetriNetName petriNetName = getActivePetriNetController().getPetriNet().getName();
+    	String filename;
+    	File file;
+    	
+    	if(petriNetName.getClass() == NormalPetriNetName.class) {
+			//Net has not been saved yet
+			fileDialog = new FileDialog((Dialog) null, "Save Petri Net", FileDialog.SAVE);
+			fileDialog.setFile("*.xml");
+			fileDialog.setFilenameFilter(new FilenameFilter() {
+				@Override
+				public boolean accept(File dir, String name) {
+					return name.endsWith(".xml");
+				}
+			});
+			fileDialog.setVisible(true);
+			filename = fileDialog.getFile();
+			if(filename == null) {
+				//Canceled save
+				return null;
+			}
+			if(!filename.endsWith(".xml")) {
+				filename += ".xml";
+			}
+			file = new File(fileDialog.getDirectory() + filename);
+		} else {
+			//Net has already been saved once
+			file = ((PetriNetFileName) petriNetName).getFile();
+		}
+    	
+    	return file;
+    }
+    
     /**
      * Removes the active tab from display if it exists.
      * Note active tab must be removed from netControllers before the petri net is removed

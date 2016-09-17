@@ -5,6 +5,8 @@ import com.google.common.reflect.ClassPath;
 import pipe.constants.GUIConstants;
 import pipe.controllers.application.PipeApplicationController;
 import pipe.gui.plugin.GuiModule;
+import pipe.gui.plugin.GuiAnalysisModule;
+import pipe.gui.plugin.GuiModifyModule;
 import uk.ac.imperial.pipe.models.petrinet.PetriNet;
 
 import javax.swing.*;
@@ -22,6 +24,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 
 
 /**
@@ -86,6 +92,11 @@ public class ModuleManager {
      * Loaded modules
      */
     private DefaultMutableTreeNode loadModules;
+    
+    /**
+     * Keeps track of changes invoked by modules
+     */
+    private final PropertyChangeSupport changeSupport;
 
 
     /**
@@ -93,11 +104,24 @@ public class ModuleManager {
      * @param view view on which the modules should be displayed
      * @param controller main PIPE appliaction controller
      */
-    public ModuleManager(Component view, PipeApplicationController controller) {
-        this.controller = controller;
+    public ModuleManager(Component view, PipeApplicationController pipeController) {
+        this.controller = pipeController;
 
         parent = view;
         installedModules = new HashSet<>();
+        
+        this.changeSupport = new PropertyChangeSupport(this);
+        
+        this.changeSupport.addPropertyChangeListener(new PropertyChangeListener() {
+        	@Override
+            public void propertyChange(PropertyChangeEvent evt) {
+            	String name = evt.getPropertyName();
+            	
+                if (name.equals(ModuleBridge.MODULE_ADD_PETRINET_MESSAGE)) {
+                    controller.createNewTabFromPetrinet((PetriNet) evt.getNewValue());
+                }
+            }
+        });
     }
 
     public JTree getModuleTree() {
@@ -144,7 +168,7 @@ public class ModuleManager {
      * Finds all the fully qualified (ie: full package names) module classnames
      * by recursively searching the rootDirectories
      *
-     * @return
+     * @return collection of modules
      */
     //only load attempt to add .class files
     private Collection<Class<? extends GuiModule>> getModuleClasses() {
@@ -178,13 +202,21 @@ public class ModuleManager {
      * the run method of each module class into the tree
      *
      * @param moduleClass
-     */
+     */    
     private void addClassToTree(Class<? extends GuiModule> moduleClass) {
         if (installedModules.add(moduleClass)) {
             DefaultMutableTreeNode modNode = new DefaultMutableTreeNode(new ModuleClassContainer(moduleClass));
 
             try {
-                Method tempMethod = moduleClass.getMethod("start", PetriNet.class);
+            	Method tempMethod;
+            	if(GuiAnalysisModule.class.isAssignableFrom(moduleClass)) {
+            		tempMethod = moduleClass.getMethod("start", PetriNet.class);
+            	} else if(GuiModifyModule.class.isAssignableFrom(moduleClass)) {
+            		tempMethod = moduleClass.getMethod("start", PetriNet.class, PropertyChangeSupport.class);
+            	} else {
+            		tempMethod = null;
+            		LOGGER.log(Level.SEVERE, "Unknown module type. Could not figure out method to preload.");
+            	}
                 ModuleMethod m = new ModuleMethod(moduleClass, tempMethod);
                 m.setName(modNode.getUserObject().toString());
                 modNode.add(new DefaultMutableTreeNode(m));
@@ -201,7 +233,7 @@ public class ModuleManager {
             }
         }
     }
-
+    
     /**
      * Removes a node from the IModule subtree
      *
@@ -256,7 +288,11 @@ public class ModuleManager {
                     if (nodeObj instanceof ModuleMethod) {
 
                         PetriNet petriNet = controller.getActivePetriNetController().getPetriNet();
-                        ((ModuleMethod) nodeObj).execute(petriNet);
+                    	if(((ModuleMethod) nodeObj).shouldCallWithChangeSupport()) {
+                            ((ModuleMethod) nodeObj).execute(petriNet, changeSupport);                    		
+                    	} else {
+                            ((ModuleMethod) nodeObj).execute(petriNet);
+                    	}
                     } else if (nodeObj.equals(LOAD_NODE_STRING)) {
 
                         //Create a file chooser

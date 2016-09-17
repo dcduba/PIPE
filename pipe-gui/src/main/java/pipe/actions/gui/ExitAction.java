@@ -3,10 +3,18 @@ package pipe.actions.gui;
 import pipe.controllers.application.PipeApplicationController;
 
 import javax.swing.*;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+
 import java.awt.Frame;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.FilenameFilter;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
+import java.util.Set;
 
 public class ExitAction extends GuiAction {
 
@@ -42,19 +50,29 @@ public class ExitAction extends GuiAction {
             application.dispose();
             System.exit(0);
         } else {
-            int result = JOptionPane.showConfirmDialog(application,
-                    "Do you really want to exit? Some unsaved Petri nets have changed.", "Confirm Exit",
-                    JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
-            switch (result) {
-                case JOptionPane.YES_OPTION:
-                    tryToExit(true);
-                    break;
-                case JOptionPane.CLOSED_OPTION:
-                case JOptionPane.CANCEL_OPTION:
-                    break;
-                default:
-                    break;
-            }
+        	Object[] options = {"Save and exit", "Don't save and exit", "Cancel"};
+        	int result = JOptionPane.showOptionDialog(application,
+        			"Would you like to save your unsaved work before exiting?",
+        			"Save before exit?", 
+        			JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, null);
+        	switch (result) {
+        	case 0:
+        		try {
+        			if(pipeApplicationController.saveUnsavedNets()) {
+        				tryToExit(true);
+        			}
+        		} catch(ParserConfigurationException | TransformerException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+                    JOptionPane.showMessageDialog(null, "Fatal error while saving.", "Fatal error",
+                            JOptionPane.ERROR_MESSAGE);
+        		}
+        		break;
+        	case 1:
+        		tryToExit(true);
+        		break;
+        	case 2:
+        	default:
+        		break;
+        	}
         }
     }
 

@@ -1,6 +1,7 @@
 package pipe.controllers;
 
 import com.google.common.collect.Sets;
+
 import pipe.controllers.application.PipeApplicationController;
 import pipe.historyActions.AnimationHistory;
 import pipe.utilities.gui.GuiUtils;
@@ -10,8 +11,14 @@ import uk.ac.imperial.pipe.models.petrinet.Transition;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.HashSet;
 import java.util.Set;
+
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 
 
 /**
@@ -45,7 +52,17 @@ public class GUIAnimator {
      * Number of transitions fired in the current sequence
      */
     private int numberSequences = 0;
-
+    
+    /**
+     * Property change support used to fire messages and register listeners to
+     */
+    protected final PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
+    
+    /**
+     * Message to be used with changeSupport when transition is fired
+     */
+    public static final String EVENT_TRANSITION_FIRED = "transition fired";
+    
     /**
      * Constructor
      * @param animator Petri net animator
@@ -57,6 +74,22 @@ public class GUIAnimator {
         this.animator = animator;
         this.animationHistory = animationHistory;
         this.applicationController = applicationController;
+    }
+    
+    /**
+    *
+    * @param listener listens for fired transitions
+    */
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        changeSupport.addPropertyChangeListener(listener);
+    }
+    
+    /**
+    *
+    * @param listener
+    */
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        changeSupport.removePropertyChangeListener(listener);
     }
 
     /**
@@ -153,6 +186,7 @@ public class GUIAnimator {
         Set<Transition> enabled = animator.getEnabledTransitions();
         markEnabledTransitions(previouslyEnabled, enabled);
 
+        changeSupport.firePropertyChange(EVENT_TRANSITION_FIRED, null, transition);
     }
 
     /**
@@ -160,10 +194,15 @@ public class GUIAnimator {
      */
     public void stepBack() {
         if (animationHistory.isStepBackAllowed()) {
+        	Set<Transition> previouslyEnabledTransitions = animator.getEnabledTransitions();
+        	Set<Transition> currentlyEnabledTransitions;
+        	
             Transition transition = animationHistory.getCurrentTransition();
             animationHistory.stepBackwards();
             animator.fireTransitionBackwards(transition);
 
+            currentlyEnabledTransitions = animator.getEnabledTransitions();
+            markEnabledTransitions(previouslyEnabledTransitions, currentlyEnabledTransitions);
         }
     }
 
@@ -172,10 +211,16 @@ public class GUIAnimator {
      */
     public void stepForward() {
         if (isStepForwardAllowed()) {
+        	Set<Transition> previouslyEnabledTransitions = animator.getEnabledTransitions();
+        	Set<Transition> currentlyEnabledTransitions;
+        	
             int nextPosition = animationHistory.getCurrentPosition() + 1;
             Transition transition = animationHistory.getTransition(nextPosition);
             animator.fireTransition(transition);
             animationHistory.stepForward();
+            
+            currentlyEnabledTransitions = animator.getEnabledTransitions();
+            markEnabledTransitions(previouslyEnabledTransitions, currentlyEnabledTransitions);
         }
     }
 
@@ -209,10 +254,10 @@ public class GUIAnimator {
      * Disables all transitions
      */
     private void restoreModel() {
-        animator.reset();
         for (Transition transition : animator.getEnabledTransitions()) {
             transition.disable();
         }
+        animator.reset();
     }
 
     /**

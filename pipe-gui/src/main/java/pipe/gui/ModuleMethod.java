@@ -9,6 +9,10 @@ import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+
 
 /**
  * This class represents a module dynamically loaded at run-time
@@ -26,7 +30,6 @@ public class ModuleMethod
     private final Class<? extends GuiModule> clazz;
     private String name;
 
-
     /* Sets up the Class and Method that this class encapsulates
     * @param cl The Class that the Method belongs to
     * @param m The Method that this class represents
@@ -37,7 +40,6 @@ public class ModuleMethod
         modMeth = m;
         name = m.getName();
     }
-
 
     /**
      * Returns the name of the modMeth
@@ -76,10 +78,40 @@ public class ModuleMethod
             modMeth.invoke(moduleObj, petriNet);
 
         } catch (IllegalAccessException | NoSuchMethodException | SecurityException | InvocationTargetException | InstantiationException | IllegalArgumentException e) {
+        	LOGGER.log(Level.SEVERE, "x", e);
+            LOGGER.log(Level.SEVERE, "Error in module method invocation: " + e.getMessage());
+        }
+    }
+    
+    public void execute(PetriNet petriNet, PropertyChangeSupport changeSupport)
+    {
+        try
+        {
+            Constructor<? extends GuiModule> ctr = clazz.getDeclaredConstructor(new Class[0]);
+            Object moduleObj = ctr.newInstance();
+
+            // handy debug to see what's being passed to the module
+            //System.out.println("models obj being passed to module: ");
+            //args[0].print();
+
+            // invoke the name method for display
+            modMeth.invoke(moduleObj, petriNet, changeSupport);
+
+        } catch (IllegalAccessException | NoSuchMethodException | SecurityException | InvocationTargetException | InstantiationException | IllegalArgumentException e) {
+        	LOGGER.log(Level.SEVERE, "x", e);
             LOGGER.log(Level.SEVERE, "Error in module method invocation: " + e.getMessage());
         }
     }
 
+    /**
+     * Detects which of the executes we should use. It's horrible. Plz fix.
+     * @return
+     */
+    public boolean shouldCallWithChangeSupport()
+    {
+    	return modMeth.getParameterTypes().length == 2;
+    	
+    }
 
     /**
      * @return Returns the modClass.

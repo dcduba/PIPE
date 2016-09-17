@@ -1,6 +1,7 @@
 package pipe.actions.gui;
 
 import pipe.controllers.application.PipeApplicationController;
+import pipe.views.PipeApplicationView;
 
 import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
@@ -17,9 +18,9 @@ public class SaveAsAction extends AbstractSaveAction {
      * @param pipeApplicationController PIPE main application controller.
      * @param fileChooser file dialog for retrieving a path for a saved Petri net.
      */
-    public SaveAsAction(PipeApplicationController pipeApplicationController, FileDialog fileChooser) {
+    public SaveAsAction(PipeApplicationController pipeApplicationController, PipeApplicationView view) {
         super("Save as", "Save as...", KeyEvent.VK_S, InputEvent.META_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK,
-                pipeApplicationController, fileChooser);
+                pipeApplicationController, view);
     }
 
     /**
@@ -29,6 +30,6 @@ public class SaveAsAction extends AbstractSaveAction {
      */
     @Override
     public void actionPerformed(ActionEvent e) {
-        saveAsOperation();
+        saveAsNet();
     }
 }

@@ -141,9 +141,9 @@ public class GSPNAnalysis {
     /**
      * Solves the steady state and adds the results to the html canvas
      *
-     * @param records
-     * @param stateMappings
-     * @param html
+     * @param records       records
+     * @param stateMappings state mappings
+     * @param html          html canvas
      */
     private void solveSteadyState(Collection<Record> records, Map<Integer, ClassifiedState> stateMappings,
                                   HtmlCanvas html) {
@@ -167,9 +167,8 @@ public class GSPNAnalysis {
     /**
      * Displays the state mappings for each token
      *
-     * @param html
-     * @param stateMappings
-     * @throws IOException
+     * @param html          html canvas
+     * @param stateMappings state mappings
      */
     private void displayStates(HtmlCanvas html, Map<Integer, ClassifiedState> stateMappings) throws IOException {
         Collection<String> tokens = getTokens(stateMappings.values());
@@ -181,9 +180,8 @@ public class GSPNAnalysis {
     /**
      * Displays the steady state information in a table
      *
-     * @param html
-     * @param steadyState
-     * @throws IOException
+     * @param html          html canvas
+     * @param steadyState   steady state
      */
     private void displaySteadyState(HtmlCanvas html, Map<Integer, Double> steadyState) throws IOException {
         List<TableRow> rows = new LinkedList<>();
@@ -195,15 +193,14 @@ public class GSPNAnalysis {
 
     /**
      * Display Performance analysis metrics for the steady state
-     * <p/>
+     * 
      * Displays:
      * - the average number of tokens on each place
      * - the average transition  throughput if loaded from a Petri net
      *
-     * @param html
-     * @param steadyState
-     * @param stateMappings
-     * @throws IOException
+     * @param html          html canvas
+     * @param steadyState   steady state
+     * @param stateMappings state mappings
      */
     private void displayMetrics(HtmlCanvas html, Map<Integer, Double> steadyState,
                                 Map<Integer, ClassifiedState> stateMappings) throws IOException {
@@ -220,7 +217,7 @@ public class GSPNAnalysis {
     }
 
     /**
-     * @param states
+     * @param states      collection of states
      * @return a sorted list of tokens contained within the states
      */
     private Collection<String> getTokens(Collection<ClassifiedState> states) {
@@ -237,10 +234,9 @@ public class GSPNAnalysis {
     }
 
     /**
-     * @param html
-     * @param stateMappings
-     * @param token
-     * @throws IOException
+     * @param html          html canvas
+     * @param stateMappings state mappings
+     * @param token         token
      */
     private void buildTokenTable(HtmlCanvas html, Map<Integer, ClassifiedState> stateMappings, String token)
             throws IOException {
@@ -276,8 +272,7 @@ public class GSPNAnalysis {
      * @param html      html canvas
      * @param tableRows table rows, these should all be the same lenght
      * @param headers   table headers
-     * @param title     itle of the table
-     * @throws IOException
+     * @param title     title of the table
      */
     public void addTable(HtmlCanvas html, List<TableRow> tableRows, List<String> headers, String title)
             throws IOException {
@@ -307,9 +302,8 @@ public class GSPNAnalysis {
      * Creates and adds to the html canvas a table for each token colour
      * containing the average number of tokens in the place
      *
-     * @param averageTokens
-     * @param html
-     * @throws IOException
+     * @param averageTokens map of places to a map of tokens to their count
+     * @param html          html canvas
      */
     private void buildAverageMetrics(Map<String, Map<String, Double>> averageTokens, HtmlCanvas html)
             throws IOException {
@@ -335,9 +329,8 @@ public class GSPNAnalysis {
     /**
      * Creates and displays a table for the given throughputs
      *
-     * @param throughputs
-     * @param html
-     * @throws IOException
+     * @param throughputs   map of transitions and their throughputs
+     * @param html          html canvas
      */
     private void displayThroughputs(Map<String, Double> throughputs, HtmlCanvas html) throws IOException {
         List<String> transitions = new ArrayList<>(throughputs.keySet());
@@ -352,7 +345,7 @@ public class GSPNAnalysis {
     }
 
     /**
-     * @param stateMappings
+     * @param stateMappings state mappings
      * @return a list of places in the state mappings
      */
     private List<String> getPlaces(Map<Integer, ClassifiedState> stateMappings) {
@@ -370,7 +363,7 @@ public class GSPNAnalysis {
     /**
      * Main method for running this externally without PIPE
      *
-     * @param args
+     * @param args          command line arguments
      */
     public static void main(String[] args) {
         JFrame frame = new JFrame("Steady state results");
@@ -396,7 +389,7 @@ public class GSPNAnalysis {
         List<String> cells = new ArrayList<>();
 
         /**
-         * @param cells
+         * @param cells cells in this row
          */
         public TableRow(String... cells) {
             this.cells.addAll(Arrays.asList(cells));
@@ -409,7 +402,7 @@ public class GSPNAnalysis {
         }
 
         /**
-         * @return cells
+         * @return cells all cells in a row
          */
         public List<String> getCells() {
             return cells;
@@ -418,7 +411,7 @@ public class GSPNAnalysis {
         /**
          * Append this value onto the cells, that is this value will become the last column
          *
-         * @param cell
+         * @param cell content of the new cell
          */
         public void addCell(String cell) {
             cells.add(cell);

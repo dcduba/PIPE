@@ -10,6 +10,7 @@ public class ExportPSAction extends GuiAction {
      */
     public ExportPSAction() {
         super("PostScript", "Export the net to PostScript format", KeyEvent.VK_T, InputEvent.META_DOWN_MASK);
+        this.setEnabled(false);
     }
 
     @Override

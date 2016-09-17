@@ -35,8 +35,8 @@ public final class ModuleLoader {
 
     /**
      * Jar to include as a module
-     * @param modFile
-     * @return
+     * @param  modFile file to load as module
+     * @return         module
      */
     public static Class<?> importModule(File modFile) {
         Class<?> modClass = null;

@@ -48,6 +48,9 @@ public class TokenActionManager implements ActionManager {
         tokenAction.addUndoableEditListener(undoListener);
         deleteTokenAction.addUndoableEditListener(undoListener);
         specifyTokenClasses.addUndoableEditListener(undoListener);
+
+        //This part is buggy, and disabled in this build
+        specifyTokenClasses.setEnabled(false);
     }
 
     /**

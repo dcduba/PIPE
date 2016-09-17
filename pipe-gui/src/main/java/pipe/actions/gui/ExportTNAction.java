@@ -13,6 +13,7 @@ public class ExportTNAction extends GuiAction {
      */
     public ExportTNAction() {
         super("eDSPN", "Export the net to Timenet format", KeyEvent.VK_E, InputEvent.META_DOWN_MASK);
+        this.setEnabled(false);
     }
 
     /**

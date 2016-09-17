@@ -95,7 +95,7 @@ public final class PipeApplicationBuilder {
 
         PrintAction printAction = new PrintAction();
 
-        ExportPNGAction exportPNGAction = new ExportPNGAction();
+        ExportPNGAction exportPNGAction = new ExportPNGAction(controller, view);
         ExportTNAction exportTNAction = new ExportTNAction();
         ExportPSAction exportPSAction = new ExportPSAction();
         ImportAction importAction = new ImportAction();
@@ -138,6 +138,7 @@ public final class PipeApplicationBuilder {
         addTokenClassComboBox(drawingToolBar, pipeComponents.chooseTokenClassAction, view);
         addButton(drawingToolBar, pipeComponents.unfoldAction);
         addButton(drawingToolBar, pipeComponents.layoutAction);
+        
         drawingToolBar.addSeparator();
         return drawingToolBar;
     }
@@ -185,6 +186,7 @@ public final class PipeApplicationBuilder {
         addButton(toolBar, pipeComponents.zoomOutAction);
         addZoomComboBox(toolBar, pipeComponents.zoomAction, examples, view);
         addButton(toolBar, pipeComponents.zoomInAction);
+        
         toolBar.addSeparator();
         addButton(toolBar, pipeComponents.toggleGrid);
         for (GuiAction action : pipeComponents.animateActionManager.getEditActions()) {
@@ -203,6 +205,12 @@ public final class PipeApplicationBuilder {
         for (int i = 0; i < toolBar.getComponentCount(); i++) {
             toolBar.getComponent(i).setFocusable(false);
         }
+        
+        //These are not working, and for clarity the components are disabled
+        pipeComponents.zoomOutAction.setEnabled(false);
+        pipeComponents.zoomInAction.setEnabled(false);
+        pipeComponents.unfoldAction.setEnabled(false);
+        pipeComponents.layoutAction.setEnabled(false);
 
         return toolBar;
     }
@@ -407,6 +415,9 @@ public final class PipeApplicationBuilder {
         tokenClassComboBox.setEditable(false);
         tokenClassComboBox.setAction(action);
         view.register(tokenClassComboBox);
+        
+        tokenClassComboBox.setEnabled(false);
+        
         toolBar.add(tokenClassComboBox);
     }
 
@@ -419,8 +430,11 @@ public final class PipeApplicationBuilder {
      */
     private void addZoomComboBox(JToolBar toolBar, Action action, String[] zoomExamples, PipeApplicationView view) {
         Dimension zoomComboBoxDimension = new Dimension(65, 28);
-        JComboBox<String> zoomComboBox = new JComboBox<>(zoomExamples);
-        zoomComboBox.setEditable(true);
+        //JComboBox<String> zoomComboBox = new JComboBox<>(zoomExamples);
+        JComboBox<String> zoomComboBox = new JComboBox<>();
+        zoomComboBox.addItem("100%");
+        //zoomComboBox.setEditable(true);
+        zoomComboBox.setEditable(false);
         zoomComboBox.setSelectedItem("100%");
         zoomComboBox.setMaximumRowCount(zoomExamples.length);
         zoomComboBox.setMaximumSize(zoomComboBoxDimension);
@@ -428,7 +442,11 @@ public final class PipeApplicationBuilder {
         zoomComboBox.setPreferredSize(zoomComboBoxDimension);
         zoomComboBox.setAction(action);
         view.registerZoom(zoomComboBox);
+        
         toolBar.add(zoomComboBox);
+        
+        zoomComboBox.setEnabled(false);
+        zoomComboBox.setVisible(false);
     }
 
     /**
@@ -458,26 +476,45 @@ public final class PipeApplicationBuilder {
      * Creates an example file menu based on examples in resources/extras/examples
      */
     private JMenu createExampleFileMenu(PipeApplicationView view, PipeApplicationController controller) {
-        if (isJar()) {
+        JMenu exampleMenu = new JMenu("Examples");
+        exampleMenu.setIcon(new ImageIcon(getImageURL("Example.png")));
+    	
+    	if (isJar()) {
             try {
-                return loadJarExamples(controller, view);
+                CodeSource src = PipeApplicationView.class.getProtectionDomain().getCodeSource();
+                if (src != null) {
+                    URL jar = src.getLocation();
+                    ZipInputStream zip = new ZipInputStream(jar.openStream());
+                    while (true) {
+                        ZipEntry e = zip.getNextEntry();
+                        if (e == null) {
+                            break;
+                        }
+                        String name = e.getName();
+                        if (name.startsWith(PIPEConstants.EXAMPLES_PATH.substring(1)) && name.endsWith(".xml")) {
+                            addMenuItem(exampleMenu, new ExampleFileAction(e, view, controller));
+              /* Do something with this entry. */
+                        }
+                    }
+                }
+                //loadJarExamples(controller, view);
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, e.getMessage());
             }
         }
-        JMenu exampleMenu = new JMenu("Examples");
-        exampleMenu.setIcon(new ImageIcon(getImageURL("Example.png")));
-        URL examplesDirURL = this.getClass().getResource(PIPEConstants.EXAMPLES_PATH);
-        try {
-            URI uri = examplesDirURL.toURI();
-            File directory = new File(uri);
-            for (File entry : directory.listFiles()) {
-                addMenuItem(exampleMenu, new ExampleFileAction(entry, view, controller));
-            }
-        } catch (URISyntaxException e) {
-            LOGGER.log(Level.SEVERE, e.getMessage());
-        }
-        return exampleMenu;
+    	
+    	URL examplesDirURL = this.getClass().getResource(PIPEConstants.EXAMPLES_PATH);
+    	try {
+    		URI uri = examplesDirURL.toURI();
+    		File directory = new File(uri);
+    		for (File entry : directory.listFiles()) {
+    			addMenuItem(exampleMenu, new ExampleFileAction(entry, view, controller));
+    		}
+    	} catch (URISyntaxException e) {
+    		LOGGER.log(Level.SEVERE, e.getMessage());
+    	}
+    
+    	return exampleMenu;
     }
 
     /**

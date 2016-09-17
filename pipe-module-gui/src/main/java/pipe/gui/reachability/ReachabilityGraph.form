@@ -94,6 +94,7 @@
               <forms/>
             </constraints>
             <properties>
+              <selected value="true"/>
               <text value="Include Vanishing States"/>
             </properties>
           </component>

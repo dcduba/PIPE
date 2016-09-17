@@ -47,7 +47,7 @@ public class SaveAsActionTest {
     public void setUp() {
         when(mockController.getActivePetriNetController()).thenReturn(mockPetriNetController);
         when(mockPetriNetController.getPetriNet()).thenReturn(mockPetriNet);
-        saveAsAction = new SaveAsAction(mockController, mockFileChooser);
+        saveAsAction = new SaveAsAction(mockController, mockView);
     }
 
     @Test
@@ -71,15 +71,17 @@ public class SaveAsActionTest {
             IllegalAccessException, TransformerException {
         PetriNetName normalName = new NormalPetriNetName("");
         when(mockPetriNet.getName()).thenReturn(normalName);
-
         File file = new File("test.xml");
+
+        saveAsAction.setFileDialog(mockFileChooser);
         when(mockFileChooser.getFiles()).thenReturn(new File[]{file});
+        
         saveAsAction.actionPerformed(null);
         verify(mockController).saveAsCurrentPetriNet(file);
     }
 
     @Test
-    public void performsSaveAsWhenEvenIfPetriNetHasFile()
+    public void performsSaveAsEvenIfPetriNetHasFile()
             throws InvocationTargetException, ParserConfigurationException, NoSuchMethodException,
             IllegalAccessException, TransformerException {
         File file1 = new File("test.xml");
@@ -87,8 +89,9 @@ public class SaveAsActionTest {
         when(mockPetriNet.getName()).thenReturn(fileName);
         File file2 = new File("test2.xml");
         when(mockFileChooser.getFiles()).thenReturn(new File[]{file2});
+        
+        saveAsAction.setFileDialog(mockFileChooser);
         saveAsAction.actionPerformed(null);
         verify(mockController).saveAsCurrentPetriNet(file2);
     }
-
 }

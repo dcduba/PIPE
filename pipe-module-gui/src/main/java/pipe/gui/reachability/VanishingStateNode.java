@@ -10,7 +10,7 @@ import net.sourceforge.jpowergraph.swtswinginteraction.color.JPowerGraphColor;
  *
  * Vanishing states are displayed in light blue
  */
-public class VanishingStateNode extends DefaultNode {
+public class VanishingStateNode extends DefaultNode implements StateNode {
     /**
      * Label to appear in the node
      */
@@ -19,7 +19,12 @@ public class VanishingStateNode extends DefaultNode {
     /**
      * Tool tip when hovering over the node
      */
-    private String toolTip;
+    private final String toolTip;
+    
+    /**
+     * id of node
+     */
+    private final int id; 
 
     /**
      * Background color
@@ -42,9 +47,10 @@ public class VanishingStateNode extends DefaultNode {
      * @param label    the node id.
      * @param tooltip  the state tooltip text
      */
-    VanishingStateNode(String label, String tooltip){
+    VanishingStateNode(String label, String tooltip, int id){
         this.label = label;
         this.toolTip = tooltip;
+        this.id = id;
     }
 
 
@@ -72,10 +78,19 @@ public class VanishingStateNode extends DefaultNode {
      *
      * @return tooltip message
      */
+    @Override
     public String getToolTip(){
         return toolTip;
     }
 
+    /**
+     * 
+     * @return id
+     */
+    @Override
+    public int getId() {
+    	return id;
+    }
 
     /**
      *

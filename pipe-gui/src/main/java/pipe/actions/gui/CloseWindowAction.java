@@ -3,9 +3,14 @@ package pipe.actions.gui;
 import pipe.controllers.application.PipeApplicationController;
 
 import javax.swing.*;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Action that closes the currently displayed tab
@@ -38,12 +43,29 @@ public class CloseWindowAction extends GuiAction {
         if (!applicationController.hasCurrentPetriNetChanged()) {
             applicationController.removeActiveTab();
         } else {
-            int result = JOptionPane.showConfirmDialog(null,
-                    "Do you really want to close this Petri net? It has unsaved changes.", "Confirm Exit",
-                    JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-            if (result == JOptionPane.YES_OPTION) {
-                applicationController.removeActiveTab();
-            }
+        	Object[] options = {"Save and close tab", "Don't save and close tab", "Cancel"};
+        	int result = JOptionPane.showOptionDialog((Frame) null,
+        			"Would you like to save your unsaved work before closing this tab?",
+        			"Save before closing?", 
+        			JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, null);
+        	switch (result) {
+        	case 0:
+        		try {
+        			if(applicationController.saveCurrentNet()) {
+        				applicationController.removeActiveTab();
+        			}
+        		} catch(ParserConfigurationException | TransformerException | IllegalAccessException | NoSuchMethodException | InvocationTargetException ee) {
+                    JOptionPane.showMessageDialog(null, "Fatal error while saving.", "Fatal error",
+                            JOptionPane.ERROR_MESSAGE);
+        		}
+        		break;
+        	case 1:
+        		applicationController.removeActiveTab();
+        		break;
+        	case 2:
+        	default:
+        		break;
+        	}
         }
     }
 }

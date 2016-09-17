@@ -9,8 +9,13 @@ import pipe.controllers.PetriNetController;
 import pipe.utilities.gui.GuiUtils;
 import uk.ac.imperial.pipe.exceptions.PetriNetComponentException;
 import uk.ac.imperial.pipe.models.petrinet.PetriNetComponent;
+import pipe.historyActions.MultipleEdit;
 
 import java.awt.event.ActionEvent;
+import java.util.List;
+import java.util.Set;
+
+import javax.swing.undo.UndoableEdit;
 
 
 public class DeletePetriNetComponentAction extends GuiAction {
@@ -34,7 +39,10 @@ public class DeletePetriNetComponentAction extends GuiAction {
     @Override
     public void actionPerformed(ActionEvent event) {
         try {
-            registerUndoEvent(petriNetController.delete(component));
+        	petriNetController.deselectAll();
+        	petriNetController.select(component);
+        	petriNetController.selectConnectedArcs();
+        	registerUndoEvent(new MultipleEdit(petriNetController.deleteSelection()));
         } catch (PetriNetComponentException e) {
             GuiUtils.displayErrorMessage(null, e.getMessage());
         }

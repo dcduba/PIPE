@@ -4,6 +4,7 @@ import javax.swing.undo.AbstractUndoableEdit;
 import javax.swing.undo.UndoableEdit;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * A class that allows for many undoable edit items to be undone/redone at once
@@ -15,14 +16,14 @@ public class MultipleEdit extends AbstractUndoableEdit {
     /**
      * Multiple undoable actions to be undone/redone in one undo/redo action
      */
-    private final Collection<UndoableEdit> multipleEdits = new LinkedList<>();
+    private final List<UndoableEdit> multipleEdits = new LinkedList<>();
 
 
     /**
      *
      * @param multipleEdits  actions to be undone/redone in one undo/redo action
      */
-    public MultipleEdit(Collection<UndoableEdit> multipleEdits) {
+    public MultipleEdit(List<UndoableEdit> multipleEdits) {
         this.multipleEdits.addAll(multipleEdits);
     }
 
@@ -56,8 +57,13 @@ public class MultipleEdit extends AbstractUndoableEdit {
     public void undo() {
         super.undo();
 
-        for (UndoableEdit edit : multipleEdits) {
+        /*for (UndoableEdit edit : multipleEdits) {
             edit.undo();
+        }*/
+        //We want to undo the action that occured last first, so the system is always
+        //in a consistent state
+        for(int i = multipleEdits.size() - 1; i >= 0; i--) {
+        	multipleEdits.get(i).undo();
         }
     }
 

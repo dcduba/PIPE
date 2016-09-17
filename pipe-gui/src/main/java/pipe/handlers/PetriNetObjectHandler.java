@@ -7,9 +7,14 @@ import pipe.controllers.DragManager;
 import pipe.controllers.PetriNetController;
 import pipe.controllers.SelectionManager;
 import uk.ac.imperial.pipe.models.petrinet.PetriNetComponent;
+import uk.ac.imperial.pipe.models.petrinet.Connectable;
+import uk.ac.imperial.pipe.models.petrinet.AbstractConnectable;
+import pipe.views.AbstractPetriNetViewComponent;
+import pipe.actions.gui.CreateAction;
 
 import javax.swing.*;
 import java.awt.Container;
+import java.awt.Point;
 import java.awt.event.MouseEvent;
 
 /**
@@ -84,7 +89,7 @@ public class PetriNetObjectHandler<T extends PetriNetComponent> extends javax.sw
             checkForPopup(e);
         }
     }
-
+    
     /**
      * Displays the popup menu in the top left
      * of the item
@@ -97,6 +102,18 @@ public class PetriNetObjectHandler<T extends PetriNetComponent> extends javax.sw
             m.show(e.getComponent(), 0, 0);
         }
     }
+    
+    /**
+     * Creates an event in the main drawing area with global coordinates
+     * @param e
+     */
+    public void mouseMoved(MouseEvent e) {
+        Point point = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), this.contentPane);
+        MouseEvent newEvent = new MouseEvent(e.getComponent(), e.getID(), e.getWhen(), e.getModifiers(),
+                (int) point.getX(), (int) point.getY(), e.getClickCount(), e.isPopupTrigger(), e.getButton());
+        this.contentPane.dispatchEvent(newEvent);
+        e.consume();
+    }
 
     /**
      * Creates the popup menu that the user will see when they right click on a
@@ -107,7 +124,9 @@ public class PetriNetObjectHandler<T extends PetriNetComponent> extends javax.sw
      */
     protected JPopupMenu getPopup(MouseEvent e) {
         JPopupMenu popup = new JPopupMenu();
-        JMenuItem menuItem = new JMenuItem(new DeletePetriNetComponentAction(component, petriNetController));
+        DeletePetriNetComponentAction action = new DeletePetriNetComponentAction(component, petriNetController);
+        action.addUndoableEditListener(petriNetController.getUndoableEditListener());
+        JMenuItem menuItem = new JMenuItem(action);
         menuItem.setText("Delete");
         popup.add(menuItem);
         return popup;

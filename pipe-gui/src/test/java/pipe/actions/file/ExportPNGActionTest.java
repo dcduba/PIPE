@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import pipe.actions.gui.ExportPNGAction;
 import pipe.views.PipeApplicationView;
+import pipe.controllers.application.PipeApplicationController;
 
 import javax.swing.*;
 
@@ -13,12 +14,14 @@ import static org.mockito.Mockito.mock;
 public class ExportPNGActionTest {
     ExportPNGAction exportPNGAction;
     PipeApplicationView mockView;
+    PipeApplicationController mockController;
 
     @Before
     public void setUp()
     {
-        exportPNGAction = new ExportPNGAction();
         mockView = mock(PipeApplicationView.class);
+        mockController = mock(PipeApplicationController.class);
+        exportPNGAction = new ExportPNGAction(mockController, mockView);
     }
 
     @Test
